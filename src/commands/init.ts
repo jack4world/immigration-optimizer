@@ -112,6 +112,16 @@ async function collectAnswers(name: string, profile: Profile): Promise<InitAnswe
     }));
   }
 
+  // Route style — deep dive vs wide coverage
+  const routeStyle = await select({
+    message: t('trip.route_style') || 'Trip style: cover more ground or deep dive in fewer places?',
+    choices: [
+      { value: 'deep', name: t('trip.route_deep') || 'Deep dive — fewer places, more time each' },
+      { value: 'wide', name: t('trip.route_wide') || 'Wide coverage — see more places, move faster' },
+      { value: 'balanced', name: t('trip.route_balanced') || 'Balanced — mix of both' },
+    ],
+  });
+
   const budgetTotal = await input({ message: t('trip.budget'), default: '5000' });
 
   const vibes = await checkbox({
@@ -152,6 +162,7 @@ async function collectAnswers(name: string, profile: Profile): Promise<InitAnswe
     anti_patterns: antiPatterns,
     must_visit: mustVisit,
     hard_constraints: hardConstraints,
+    route_style: routeStyle as 'deep' | 'wide' | 'balanced',
     user_notes: '',  // filled in by LLM interview in initCommand
     dietary: profile.dietary,
     loyalty_program: profile.loyalty_program,

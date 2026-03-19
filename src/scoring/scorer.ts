@@ -10,6 +10,39 @@ import { runHolisticPass, applyHolisticAdjustments } from './holistic.js';
 import { buildComparativePrompt } from './prompts.js';
 import { parseJsonResponse } from '../llm/json-parser.js';
 
+function checkSourceConfidence(activitiesDb: ActivitiesDB): string | null {
+  let totalEntries = 0;
+  let llmOnlyEntries = 0;
+
+  for (const [key, data] of Object.entries(activitiesDb || {})) {
+    if (key.startsWith('_')) continue; // skip _meta
+    if (!data) continue;
+    for (const a of data.activities || []) {
+      totalEntries++;
+      if (!a.source || a.source === 'llm_knowledge' || a.source === 'training-data' || a.source === 'pre-training knowledge') {
+        llmOnlyEntries++;
+      }
+    }
+    for (const r of data.restaurants || []) {
+      totalEntries++;
+      if (!r.source || r.source === 'llm_knowledge' || r.source === 'training-data' || r.source === 'pre-training knowledge') {
+        llmOnlyEntries++;
+      }
+    }
+  }
+
+  if (totalEntries === 0) {
+    return 'No research data — food/experience scores capped at 85';
+  }
+
+  const llmRatio = llmOnlyEntries / totalEntries;
+  if (llmRatio > 0.8) {
+    return `${Math.round(llmRatio * 100)}% of research data is unverified LLM knowledge — food/experience scores capped at 85`;
+  }
+
+  return null;
+}
+
 export class Scorer {
   constructor(
     private provider: LLMProvider,
@@ -49,6 +82,20 @@ export class Scorer {
     const adjustments = await runHolisticPass(this.provider, allScores);
     log(`  ${adjustments.length} adjustments`);
     applyHolisticAdjustments(allScores, adjustments);
+
+    // Pass 4: Source confidence dampening
+    // If activities_db is entirely LLM-sourced, cap food and experience scores
+    const sourceWarning = checkSourceConfidence(activitiesDb);
+    if (sourceWarning) {
+      log(`  ⚠ ${sourceWarning}`);
+      for (const dim of ['food_score', 'experience_quality']) {
+        if (dim in allScores && allScores[dim].score > 85) {
+          const before = allScores[dim].score;
+          allScores[dim].score = Math.min(allScores[dim].score, 85);
+          log(`  ${dim} capped: ${before.toFixed(1)} → ${allScores[dim].score.toFixed(1)} (unverified data)`);
+        }
+      }
+    }
 
     // Compute composite
     const composite = Object.values(allScores).reduce(

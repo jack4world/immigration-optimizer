@@ -81,10 +81,24 @@ export function buildCriticPrompt(
     }
   }
 
-  return `You are a travel plan critic. Your ONLY job is to find flaws.
-Do NOT praise anything. Apply these specific penalty rules:
+  return `You are a ruthless travel plan critic. Your ONLY job is to find flaws.
+Do NOT praise anything. Do NOT give the benefit of the doubt.
+
+## PENALTY RULES — Check EVERY rule against EVERY day
 
 ${rulesText.length > 0 ? rulesText.join('\n') : '(no specific rules defined — use general travel planning best practices)'}
+
+## MANDATORY AUDIT PROCEDURE
+
+You MUST check each rule against each day of the plan, one by one.
+For each rule, write your reasoning before deciding TRIGGERED or NOT TRIGGERED.
+
+Specifically check:
+- Count EXACT driving hours per day. "约6小时" counts as 6h. Over 6h with no named stops = penalty.
+- Check EVERY meal in the plan. Any meal described as "当地餐厅", "路边馆", "小餐馆", "面馆" without a specific name = penalty.
+- Check if ANY day has 3 meals of the same food category (e.g., all lamb+naan variants).
+- Check arrival times at scenic spots vs golden hour / tour group schedules.
+- Verify the plan does NOT depend on roads that may be closed in the stated month.
 
 ## Known Tourist Traps (from research database)
 ${traps.length > 0 ? traps.join('\n') : '(none researched yet)'}
@@ -92,13 +106,14 @@ ${traps.length > 0 ? traps.join('\n') : '(none researched yet)'}
 ## The Plan
 ${planContent}
 
-Find every violation of the rules above. Be strict and specific.
+Find every violation. Be strict and specific.
 For each issue, cite the exact day number and the specific problem.
+A penalty that COULD apply DOES apply — err on the side of penalizing.
 
 Return a JSON array of penalties (no other text):
 [{"category": "logistics|experience|food|realism", "day": N, "issue": "specific description", "penalty": -N}]
 
-Return an empty array [] if genuinely no issues found.`;
+Return an empty array [] ONLY if you have verified every rule against every day and found zero violations.`;
 }
 
 export function buildHolisticPrompt(

@@ -1,6 +1,7 @@
 import type { LLMProvider } from '../llm/provider.js';
 import type { CityResearch, TripConstraints } from '../data/schemas.js';
 import { parseJsonResponse } from '../llm/json-parser.js';
+import chalk from 'chalk';
 
 export async function researchCity(
   provider: LLMProvider,
@@ -9,6 +10,10 @@ export async function researchCity(
   constraints: TripConstraints,
   existingCount: number = 0,
 ): Promise<CityResearch> {
+  console.log(chalk.yellow(`  ⚠ Researching ${cityName} using LLM knowledge only (no web search configured).`));
+  console.log(chalk.yellow(`    Data may be outdated. Configure search_api for real-time data:`));
+  console.log(chalk.yellow(`    trip-optimizer config set search_api.provider tavily`));
+  console.log(chalk.yellow(`    trip-optimizer config set search_api.api_key <key>\n`));
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December',

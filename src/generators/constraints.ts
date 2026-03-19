@@ -14,6 +14,7 @@ export interface InitAnswers {
   anti_patterns: string[];
   must_visit: string[];
   hard_constraints: string[];
+  route_style?: 'deep' | 'wide' | 'balanced';
   user_notes: string;
   dietary: string[];
   loyalty_program: string;
@@ -35,13 +36,24 @@ export function generateConstraints(answers: InitAnswers): string {
       travelers: answers.travelers,
       origin: answers.origin,
     },
-    cities: answers.cities.map(c => ({
-      name: c.name,
-      key: c.key,
-      role: c.role,
-      min_days: c.role === 'transit' ? 0 : 1,
-      max_days: c.role === 'transit' ? 1 : Math.min(daysPerCity + 2, totalDays),
-    })),
+    cities: answers.cities.map(c => {
+      const style = answers.route_style || 'balanced';
+      // Deep dive: higher min, higher max per city. Wide: lower min, lower max.
+      const minDays = c.role === 'transit' ? 0
+        : style === 'deep' ? Math.min(2, daysPerCity)
+        : 1;
+      const maxDays = c.role === 'transit' ? 1
+        : style === 'deep' ? Math.min(daysPerCity + 4, totalDays)
+        : style === 'wide' ? Math.min(daysPerCity + 1, totalDays)
+        : Math.min(daysPerCity + 2, totalDays);
+      return {
+        name: c.name,
+        key: c.key,
+        role: c.role,
+        min_days: minDays,
+        max_days: maxDays,
+      };
+    }),
     hard_requirements: ['City ordering cannot change'],
     must_visit: answers.must_visit.length > 0 ? answers.must_visit : [],
     hard_constraints: answers.hard_constraints.length > 0 ? answers.hard_constraints : [],
