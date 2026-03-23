@@ -11,7 +11,7 @@ export function chartCommand(): void {
   const results = readResults(resultsPath);
 
   if (results.length === 0) {
-    console.log(chalk.yellow('\n  No optimization results yet. Run: trip-optimizer run\n'));
+    console.log(chalk.yellow('\n  No optimization results yet. Run: immigration-optimizer run\n'));
     return;
   }
 

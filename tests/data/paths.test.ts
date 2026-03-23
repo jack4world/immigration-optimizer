@@ -4,7 +4,7 @@ import { getGlobalDir, getConfigPath, getProfilePath } from '../../src/data/path
 describe('paths', () => {
   it('returns global dir under home', () => {
     const dir = getGlobalDir();
-    expect(dir).toContain('.trip-optimizer');
+    expect(dir).toContain('.immigration-optimizer');
   });
 
   it('returns config path ending with config.json', () => {

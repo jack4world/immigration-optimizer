@@ -5,13 +5,16 @@ export function configCommand(args: string[]): void {
   const config = loadConfig();
 
   if (args.length === 0) {
-    // Show current config
     console.log(chalk.bold('\n  Configuration\n'));
     console.log(`  Provider: ${config.provider}`);
     console.log(`  API Key: ${config.api_key ? config.api_key.substring(0, 10) + '...' : chalk.dim('not set')}`);
     if (config.search_api) {
       console.log(`  Search API: ${config.search_api.provider}`);
       console.log(`  Search Key: ${config.search_api.api_key ? config.search_api.api_key.substring(0, 10) + '...' : chalk.dim('not set')}`);
+    }
+    if (config.model_override) {
+      console.log(`  Custom Model: ${config.model_override.model}`);
+      console.log(`  Base URL: ${config.model_override.base_url}`);
     }
     console.log();
     return;
@@ -39,5 +42,5 @@ export function configCommand(args: string[]): void {
     return;
   }
 
-  console.log('  Usage: trip-optimizer config [set <key> <value>]');
+  console.log('  Usage: immigration-optimizer config [set <key> <value>]');
 }

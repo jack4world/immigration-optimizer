@@ -5,32 +5,24 @@ import path from 'path';
 import os from 'os';
 
 describe('profile', () => {
-  const testDir = path.join(os.tmpdir(), 'trip-opt-test-profile-' + Date.now());
+  const testDir = path.join(os.tmpdir(), 'imm-opt-test-profile-' + Date.now());
 
   beforeEach(() => fs.mkdirSync(testDir, { recursive: true }));
   afterEach(() => fs.rmSync(testDir, { recursive: true, force: true }));
 
   it('returns default profile when no file exists', () => {
     const profile = loadProfile(testDir);
-    expect(profile.loyalty_program).toBe('');
-    expect(profile.dietary).toEqual([]);
-    expect(profile.trips_completed).toBe(0);
+    expect(profile.completed_cases).toBe(0);
+    expect(profile.last_updated).toBe('');
   });
 
   it('saves and loads profile', () => {
     saveProfile({
-      loyalty_program: 'marriott_bonvoy',
-      dietary: ['no shellfish'],
-      stated_vibes: ['wandering', 'food'],
-      learned_vibes: [],
-      anti_patterns: ['tourist traps'],
-      anti_patterns_learned: [],
-      source_trust: {},
-      trips_completed: 0,
-      last_debrief: '',
+      completed_cases: 3,
+      last_updated: '2026-03-23',
     }, testDir);
     const loaded = loadProfile(testDir);
-    expect(loaded.loyalty_program).toBe('marriott_bonvoy');
-    expect(loaded.dietary).toEqual(['no shellfish']);
+    expect(loaded.completed_cases).toBe(3);
+    expect(loaded.last_updated).toBe('2026-03-23');
   });
 });

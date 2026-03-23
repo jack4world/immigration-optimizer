@@ -1,10 +1,10 @@
 {
-  "name": "trip-optimizer",
-  "version": "0.1.3",
-  "description": "Autonomously optimize travel plans using the autoresearch pattern",
+  "name": "immigration-optimizer",
+  "version": "0.1.0",
+  "description": "Optimize Canadian immigration pathways using the autoresearch pattern",
   "type": "module",
   "bin": {
-    "trip-optimizer": "./dist/cli.js"
+    "immigration-optimizer": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsup",
@@ -24,11 +24,14 @@
   },
   "license": "MIT",
   "keywords": [
-    "travel",
+    "immigration",
+    "canada",
     "optimizer",
     "ai",
     "cli",
-    "autoresearch"
+    "autoresearch",
+    "express-entry",
+    "pnp"
   ],
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

@@ -1,40 +1,60 @@
 import { describe, it, expect } from 'vitest';
-import { mergeResearch } from '../../src/research/researcher.js';
-import type { CityResearch } from '../../src/data/schemas.js';
+import { mergeProgramsDb } from '../../src/research/researcher.js';
+import type { ImmigrationProgram, ProgramsDB } from '../../src/data/schemas.js';
 
-describe('mergeResearch', () => {
-  it('returns new research when no existing data', () => {
-    const newData: CityResearch = {
-      activities: [{ name: 'Walk', name_local: '', type: 'vibe', score: 8, authenticity: 9, notes: '', crowd_level: 'low', cost_per_person: 0, currency: 'USD', duration_hours: 2, location: 'here', source: 'llm_knowledge' }],
-      restaurants: [],
-      neighborhoods_for_wandering: [],
-      tourist_traps: [],
-      seasonal_highlights: [],
-    };
-    const result = mergeResearch(undefined, newData);
-    expect(result.activities).toHaveLength(1);
+function makeProgram(id: string, source: 'llm_knowledge' | 'web_research' | 'ircc_official' = 'llm_knowledge'): ImmigrationProgram {
+  return {
+    id,
+    name: `Program ${id}`,
+    name_zh: `项目 ${id}`,
+    category: 'express_entry',
+    description: 'test',
+    description_zh: 'test',
+    eligibility: {
+      min_clb: 7,
+      min_education: 'bachelors',
+      min_work_years_canadian: 0,
+      min_work_years_foreign: 1,
+      min_noc_teer: 3,
+      min_settlement_funds: 13757,
+      requires_job_offer: false,
+      requires_lmia: false,
+      requires_provincial_nomination: false,
+      additional_requirements: [],
+    },
+    processing: {
+      typical_processing_months: { min: 5, max: 8 },
+      application_fee_cad: 1365,
+      additional_costs: [],
+      total_estimated_cost_cad: 1365,
+    },
+    metrics: {
+      success_rate_estimate: 80,
+      competition_level: 'medium',
+    },
+    source,
+    last_verified: '2026-01-01',
+  };
+}
+
+describe('mergeProgramsDb', () => {
+  it('returns new programs when db is empty', () => {
+    const result = mergeProgramsDb({}, [makeProgram('a'), makeProgram('b')]);
+    expect(Object.keys(result)).toHaveLength(2);
+    expect(result.a.id).toBe('a');
   });
 
-  it('merges without duplicates by name', () => {
-    const existing: CityResearch = {
-      activities: [{ name: 'Walk', name_local: '', type: 'vibe', score: 8, authenticity: 9, notes: '', crowd_level: 'low', cost_per_person: 0, currency: 'USD', duration_hours: 2, location: 'here', source: 'llm_knowledge' }],
-      restaurants: [],
-      neighborhoods_for_wandering: [],
-      tourist_traps: [],
-      seasonal_highlights: ['cherry blossoms'],
-    };
-    const newData: CityResearch = {
-      activities: [
-        { name: 'Walk', name_local: '', type: 'vibe', score: 8, authenticity: 9, notes: '', crowd_level: 'low', cost_per_person: 0, currency: 'USD', duration_hours: 2, location: 'here', source: 'llm_knowledge' },
-        { name: 'Temple', name_local: '', type: 'culture', score: 7, authenticity: 6, notes: '', crowd_level: 'high', cost_per_person: 5, currency: 'USD', duration_hours: 1, location: 'there', source: 'llm_knowledge' },
-      ],
-      restaurants: [],
-      neighborhoods_for_wandering: [],
-      tourist_traps: [],
-      seasonal_highlights: ['cherry blossoms', 'sakura festival'],
-    };
-    const result = mergeResearch(existing, newData);
-    expect(result.activities).toHaveLength(2); // Walk (existing) + Temple (new), not Walk again
-    expect(result.seasonal_highlights).toHaveLength(2); // deduped
+  it('merges without overwriting higher-priority sources', () => {
+    const existing: ProgramsDB = { a: makeProgram('a', 'ircc_official') };
+    const result = mergeProgramsDb(existing, [makeProgram('a', 'llm_knowledge'), makeProgram('b')]);
+    expect(Object.keys(result)).toHaveLength(2);
+    expect(result.a.source).toBe('ircc_official');
+    expect(result.b.source).toBe('llm_knowledge');
+  });
+
+  it('overwrites lower-priority sources', () => {
+    const existing: ProgramsDB = { a: makeProgram('a', 'llm_knowledge') };
+    const result = mergeProgramsDb(existing, [makeProgram('a', 'web_research')]);
+    expect(result.a.source).toBe('web_research');
   });
 });

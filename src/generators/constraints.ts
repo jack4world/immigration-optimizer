@@ -1,80 +1,121 @@
 import yaml from 'js-yaml';
-import type { TripConstraints } from '../data/schemas.js';
+import type { ApplicantProfile } from '../data/schemas.js';
 
 export interface InitAnswers {
   name: string;
-  start_date: string;
-  end_date: string;
-  travelers: number;
-  origin: string;
-  cities: Array<{ name: string; key: string; role: 'destination' | 'transit' }>;
-  budget_total: number;
-  budget_currency: string;
-  vibes: string[];
+  nationality: string;
+  age: number;
+  date_of_birth: string;
+  marital_status: 'single' | 'married' | 'common_law';
+  has_children: boolean;
+  highest_degree: string;
+  field_of_study: string;
+  institution: string;
+  edu_country: string;
+  year_completed: number;
+  eca_completed: boolean;
+  primary_test: 'IELTS' | 'CELPIP' | 'none';
+  english_reading: number;
+  english_writing: number;
+  english_listening: number;
+  english_speaking: number;
+  has_french: boolean;
+  french_reading: number;
+  french_writing: number;
+  french_listening: number;
+  french_speaking: number;
+  current_occupation: string;
+  noc_code: string;
+  teer_category: number;
+  foreign_years: number;
+  canadian_years: number;
+  settlement_funds_cad: number;
+  willing_to_invest: boolean;
+  has_job_offer: boolean;
+  relatives_in_canada: boolean;
+  previous_study: boolean;
+  previous_work: boolean;
+  target_provinces: string[];
+  timeline_urgency: string;
+  risk_tolerance: string;
+  willing_to_study: boolean;
+  willing_to_relocate: boolean;
   anti_patterns: string[];
-  must_visit: string[];
-  hard_constraints: string[];
-  route_style?: 'deep' | 'wide' | 'balanced';
   user_notes: string;
-  dietary: string[];
-  loyalty_program: string;
 }
 
-export function generateConstraints(answers: InitAnswers): string {
-  const startDate = new Date(answers.start_date);
-  const endDate = new Date(answers.end_date);
-  const totalDays = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  const destinationCount = answers.cities.filter(c => c.role === 'destination').length || 1;
-  const daysPerCity = Math.max(1, Math.floor(totalDays / destinationCount));
-
-  const constraints: TripConstraints = {
-    trip: {
+export function generateProfileYaml(answers: InitAnswers): string {
+  const profile: ApplicantProfile = {
+    personal: {
       name: answers.name,
-      start_date: answers.start_date,
-      end_date: answers.end_date,
-      total_days: totalDays,
-      travelers: answers.travelers,
-      origin: answers.origin,
+      nationality: answers.nationality,
+      age: answers.age,
+      date_of_birth: answers.date_of_birth,
+      marital_status: answers.marital_status as 'single' | 'married' | 'common_law',
+      has_children: answers.has_children,
     },
-    cities: answers.cities.map(c => {
-      const style = answers.route_style || 'balanced';
-      // Deep dive: higher min, higher max per city. Wide: lower min, lower max.
-      const minDays = c.role === 'transit' ? 0
-        : style === 'deep' ? Math.min(2, daysPerCity)
-        : 1;
-      const maxDays = c.role === 'transit' ? 1
-        : style === 'deep' ? Math.min(daysPerCity + 4, totalDays)
-        : style === 'wide' ? Math.min(daysPerCity + 1, totalDays)
-        : Math.min(daysPerCity + 2, totalDays);
-      return {
-        name: c.name,
-        key: c.key,
-        role: c.role,
-        min_days: minDays,
-        max_days: maxDays,
-      };
-    }),
-    hard_requirements: ['City ordering cannot change'],
-    must_visit: answers.must_visit.length > 0 ? answers.must_visit : [],
-    hard_constraints: answers.hard_constraints.length > 0 ? answers.hard_constraints : [],
-    user_notes: answers.user_notes || '',
+    education: {
+      highest_degree: answers.highest_degree as ApplicantProfile['education']['highest_degree'],
+      field_of_study: answers.field_of_study,
+      institution: answers.institution,
+      country: answers.edu_country,
+      year_completed: answers.year_completed,
+      has_canadian_credential: false,
+      eca_completed: answers.eca_completed,
+    },
+    language: {
+      primary_test: answers.primary_test,
+      english: answers.primary_test !== 'none' ? {
+        reading: answers.english_reading,
+        writing: answers.english_writing,
+        listening: answers.english_listening,
+        speaking: answers.english_speaking,
+      } : null,
+      french: answers.has_french ? {
+        reading: answers.french_reading,
+        writing: answers.french_writing,
+        listening: answers.french_listening,
+        speaking: answers.french_speaking,
+      } : null,
+    },
+    work_experience: {
+      canadian: [],
+      foreign: [],
+      total_years_canadian: answers.canadian_years,
+      total_years_foreign: answers.foreign_years,
+      current_occupation: answers.current_occupation,
+      noc_code: answers.noc_code,
+      teer_category: answers.teer_category as ApplicantProfile['work_experience']['teer_category'],
+    },
+    finances: {
+      settlement_funds_cad: answers.settlement_funds_cad,
+      proof_of_funds_available: answers.settlement_funds_cad > 0,
+      willing_to_invest: answers.willing_to_invest,
+    },
+    canadian_ties: {
+      has_job_offer: answers.has_job_offer,
+      has_lmia: false,
+      relatives_in_canada: answers.relatives_in_canada,
+      previous_study_in_canada: answers.previous_study,
+      previous_work_in_canada: answers.previous_work,
+      previous_visit_to_canada: false,
+    },
     preferences: {
-      priority_order: answers.vibes,
-      anti_patterns: answers.anti_patterns.length > 0 ? answers.anti_patterns : ['tourist traps', 'long queues'],
-      pro_patterns: [
-        'back-alley local spots',
-        'neighborhood wandering with no fixed destination',
-        'things you can only do in this specific place',
-        'seasonal specialties',
-      ],
-    },
-    dietary: answers.dietary,
-    loyalty_program: answers.loyalty_program,
-    budget: {
-      total: answers.budget_total,
-      currency: answers.budget_currency,
+      target_provinces: answers.target_provinces,
+      preferred_city_size: 'any',
+      industry_preference: [answers.field_of_study],
+      timeline_urgency: answers.timeline_urgency as ApplicantProfile['preferences']['timeline_urgency'],
+      risk_tolerance: answers.risk_tolerance as ApplicantProfile['preferences']['risk_tolerance'],
+      willing_to_study: answers.willing_to_study,
+      willing_to_relocate_province: answers.willing_to_relocate,
+      priority_order: ['certainty', 'speed', 'cost', 'quality_of_life'],
+      anti_patterns: answers.anti_patterns,
     },
   };
 
-  return yaml.dump(constraints, { lineWidth: 120, noRefs: true });
+  return yaml.dump(profile, { lineWidth: 120, noRefs: true });
+}
+
+export function parseProfileYaml(yamlContent: string): ApplicantProfile {
+  return yaml.load(yamlContent) as ApplicantProfile;
 }

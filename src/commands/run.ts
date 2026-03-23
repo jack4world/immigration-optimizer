@@ -14,8 +14,8 @@ interface RunOptions {
 export async function runCommand(options: RunOptions): Promise<void> {
   const cwd = process.cwd();
 
-  if (!fs.existsSync(path.join(cwd, 'constraints.yaml'))) {
-    console.log(chalk.red('\n  Not in a trip project directory (no constraints.yaml found).\n'));
+  if (!fs.existsSync(path.join(cwd, 'profile.yaml'))) {
+    console.log(chalk.red('\n  Not in an immigration project directory (no profile.yaml found).\n'));
     process.exit(1);
   }
 
@@ -23,25 +23,22 @@ export async function runCommand(options: RunOptions): Promise<void> {
 
   if (options.standalone) {
     const provider = createProvider(config);
-
     const modelName = config.model_override?.model || process.env.ANTHROPIC_MODEL || 'default';
-    console.log(chalk.bold(`\n  trip-optimizer: standalone mode (${modelName})\n`));
+    console.log(chalk.bold(`\n  immigration-optimizer: standalone mode (${modelName})\n`));
 
     await runOptimizationLoop({
       provider,
-      tripDir: cwd,
+      pathwayDir: cwd,
       onIteration: () => {},
     });
     return;
   }
 
-  // Agent mode requires Claude Code — warn if custom model is configured
   if (config.model_override) {
     console.log(chalk.yellow('\n  Custom model configured — agent mode still uses Claude Code.'));
     console.log(chalk.yellow('  Use --standalone to run with your custom model.\n'));
   }
 
-  // Default: agent mode (interactive)
   const { launchAgent } = await import('./run-agent.js');
   await launchAgent(cwd, { safe: options.safe, headless: options.headless });
 }

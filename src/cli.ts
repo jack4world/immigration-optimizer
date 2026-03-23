@@ -6,28 +6,24 @@ import { scoreCommand } from './commands/score.js';
 import { researchCommand } from './commands/research.js';
 import { runCommand } from './commands/run.js';
 import { statusCommand } from './commands/status.js';
-import { debriefCommand } from './commands/debrief.js';
-import { historyCommand } from './commands/history.js';
 import { dashboardCommand } from './commands/dashboard.js';
 import { chartCommand } from './commands/chart.js';
-import { planCommand } from './commands/plan.js';
 import { loadConfig } from './data/config.js';
 import { setLanguage } from './i18n.js';
 
-// Load language from config at startup
 const _cfg = loadConfig();
 if (_cfg.language) setLanguage(_cfg.language);
 
 const program = new Command();
 
 program
-  .name('trip-optimizer')
-  .description('Autonomously optimize travel plans using the autoresearch pattern')
+  .name('immigration-optimizer')
+  .description('Optimize Canadian immigration pathways using the autoresearch pattern')
   .version('0.1.0');
 
 program
   .command('init <name>')
-  .description('Create a new trip project')
+  .description('Create a new immigration pathway project')
   .action(initCommand);
 
 program
@@ -38,25 +34,25 @@ program
 
 program
   .command('profile')
-  .description('View travel profile and preferences')
+  .description('View applicant profile and CRS estimate')
   .action(() => profileCommand());
 
 program
   .command('score')
-  .description('Run a one-off absolute score of the current plan')
+  .description('Run a one-off absolute score of the current pathway')
   .action(scoreCommand);
 
 program
-  .command('research [city]')
-  .description('Research sprint for a specific city or all cities')
+  .command('research')
+  .description('Research additional immigration programs')
   .action(researchCommand);
 
 program
   .command('run')
   .description('Start the optimization loop (default: agent mode)')
   .option('--standalone', 'Use direct API calls instead of Claude Code agent')
-  .option('--headless', 'Run agent non-interactively (fire and forget)')
-  .option('--safe', 'Use normal permissions in agent mode (no yolo)')
+  .option('--headless', 'Run agent non-interactively')
+  .option('--safe', 'Use normal permissions in agent mode')
   .action(runCommand);
 
 program
@@ -65,19 +61,10 @@ program
   .action(statusCommand);
 
 program
-  .command('debrief')
-  .description('Post-trip debrief — rate experiences and build memory')
-  .action(debriefCommand);
-
-program
-  .command('history')
-  .description('View past trip debriefs and learned preferences')
-  .action(historyCommand);
-
-program
   .command('dashboard')
   .description('Live dashboard showing optimization progress')
-  .option('--watch', 'Auto-refresh every 5 seconds')
+  .option('--watch', 'Auto-refresh mode')
+  .option('--interval <seconds>', 'Refresh interval in seconds (default: 3)')
   .action((options) => dashboardCommand(options));
 
 program
@@ -85,14 +72,6 @@ program
   .description('ASCII chart of score progression')
   .action(chartCommand);
 
-program
-  .command('plan')
-  .description('Pretty-print the current travel plan')
-  .option('--pdf', 'Generate a PDF document')
-  .option('-o, --output <path>', 'Output path for PDF')
-  .action(planCommand);
-
-// Global error handler — catch unhandled LLM / provider errors
 process.on('unhandledRejection', (err) => {
   const msg = err instanceof Error ? err.message : String(err);
   console.error(`\n  \x1b[31mError: ${msg}\x1b[0m`);
@@ -102,13 +81,7 @@ process.on('unhandledRejection', (err) => {
     } else if (process.env.CLAUDE_CODE_USE_VERTEX === '1' || process.env.GOOGLE_CLOUD_PROJECT) {
       console.error('  \x1b[33mAuthentication failed. Run: gcloud auth application-default login\x1b[0m');
     } else {
-      console.error('  \x1b[33mAnthropic API key is invalid. Run: trip-optimizer config set api_key <key>\x1b[0m');
-    }
-  } else if (msg.includes('404') || msg.includes('NOT_FOUND')) {
-    if (_cfg.model_override) {
-      console.error(`  \x1b[33mModel "${_cfg.model_override.model}" not found at ${_cfg.model_override.base_url}\x1b[0m`);
-    } else {
-      console.error(`  \x1b[33mModel not found. Check ANTHROPIC_MODEL=${process.env.ANTHROPIC_MODEL || '(not set)'}\x1b[0m`);
+      console.error('  \x1b[33mAnthropic API key is invalid. Run: immigration-optimizer config set api_key <key>\x1b[0m');
     }
   } else if (msg.includes('ENOTFOUND') || msg.includes('ECONNREFUSED')) {
     console.error('  \x1b[33mNetwork error. Check your internet connection.\x1b[0m');
