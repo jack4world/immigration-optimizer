@@ -63,13 +63,28 @@ export async function launchAgent(pathwayDir: string, options: { safe?: boolean;
 
   if (options.headless) {
     const prompt = [
-      'Read program.md carefully — it contains the applicant profile, CRS analysis, scoring system, and optimization instructions.',
-      'Begin the optimization loop:',
-      '1. First run a research sprint to verify program data',
-      '2. Then enter the mutation loop — mutate, score, keep/discard',
-      '3. Log every iteration to results.tsv',
-      '4. Run until interrupted',
-    ].join(' ');
+      'Read program.md for full instructions. Then execute this loop:',
+      '',
+      'SETUP: Read profile.yaml, pathway.md, programs_db.json, rubrics.yaml.',
+      '',
+      'SCORING: For each scoring pass, read rubrics.yaml dimensions and score pathway.md on each dimension (0-100).',
+      'Write score.json with format: {"mode":"absolute","composite_score":N,"components":{"dim":{"score":N,"weight":N,"sub_dimensions":{"sub":{"score":N,"note":"..."}}},...},"penalties":[],"rewards":[],"holistic_adjustments":[],"scored_at":"ISO","model":"claude"}',
+      '',
+      'BASELINE: Score the initial pathway.md. Write iteration 0 to results.tsv:',
+      '0\\t<commit>\\t0.00\\t<score>\\t+<score>\\tkeep\\tRESEARCH\\tbaseline scored',
+      '',
+      'LOOP: For each iteration N:',
+      '1. Pick mutation type rotating: SWAP_PROGRAM, ADD_CREDENTIAL, REORDER_STEPS, ADD_PARALLEL, SWITCH_PROVINCE (or RESEARCH if 5+ discards)',
+      '2. Generate ONE change to pathway.md',
+      '3. git add pathway.md && git commit -m "<TYPE>: <description>"',
+      '4. Score the new pathway',
+      '5. If new score > old score: KEEP (update current score)',
+      '6. If new score <= old score: git reset --hard HEAD~1',
+      '7. Append tab-separated line to results.tsv: N\\t<commit>\\t<before>\\t<after>\\t<delta>\\t<keep|discard>\\t<TYPE>\\t<desc>',
+      '8. Continue forever until interrupted',
+      '',
+      'IMPORTANT: Always append to results.tsv (do NOT overwrite). Always use tab separators. The dashboard reads this file.',
+    ].join('\n');
 
     args.push('-p', prompt);
     console.log(chalk.bold(`\n  Launching headless...\n`));
