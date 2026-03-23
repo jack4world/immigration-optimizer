@@ -256,6 +256,12 @@ ${researchSources}
 - [ ] NOC ${profile.work_experience.noc_code} demand by province
 - [ ] Any new pilot programs or policy changes
 - [ ] Verify all programs in programs_db.json are still active
+- [ ] ALL PNP streams per province (not just 1 — each province has 3-8 streams)
+- [ ] Entrepreneur, graduate, rural, tech, and skilled worker streams per province
+
+### Comprehensive Research Command
+Run \`immigration-optimizer research\` to trigger a full province-by-province scan.
+${hasSearchApi ? 'Web search API is configured — the research command will automatically search the web for each province and federal program to verify and supplement LLM knowledge.' : 'Tip: Configure web search for real-time verification:\n  immigration-optimizer config set search_api.provider tavily\n  immigration-optimizer config set search_api.api_key <key>'}
 
 After researching, update \`programs_db.json\` with new programs and change \`source\` from "llm_knowledge" to "web_research" or "ircc_official" for verified data.
 Git commit: \`research: verified [N] programs, added [N] new\`

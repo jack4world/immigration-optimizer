@@ -1,15 +1,42 @@
 import type { LLMProvider } from '../llm/provider.js';
 import type { ImmigrationProgram, ApplicantProfile, ProgramsDB } from '../data/schemas.js';
+import type { Config } from '../data/config.js';
 import { parseJsonResponse } from '../llm/json-parser.js';
 import { getLlmLanguageInstruction } from '../i18n.js';
+import { webSearch, buildSearchQueries, buildFederalSearchQueries, type SearchResult } from './web-search.js';
+
+function formatSearchResults(results: SearchResult[]): string {
+  if (results.length === 0) return '';
+  return results
+    .map(r => `- [${r.title}](${r.url})\n  ${r.snippet}`)
+    .join('\n');
+}
 
 export async function researchPrograms(
   provider: LLMProvider,
   profile: ApplicantProfile,
   existingDb: ProgramsDB,
+  config?: Config,
+  log: (msg: string) => void = () => {},
 ): Promise<ImmigrationProgram[]> {
   const langInstruction = getLlmLanguageInstruction();
   const existingIds = Object.keys(existingDb);
+
+  let webContext = '';
+  if (config) {
+    log('  Searching web for federal programs...');
+    const queries = buildFederalSearchQueries();
+    const allResults: SearchResult[] = [];
+    for (const q of queries) {
+      const results = await webSearch(q, config);
+      allResults.push(...results);
+      if (allResults.length >= 20) break;
+    }
+    if (allResults.length > 0) {
+      webContext = `\n## Web Search Results (use these to verify and supplement your knowledge)\n${formatSearchResults(allResults)}\n`;
+      log(`  Found ${allResults.length} web results for federal programs`);
+    }
+  }
 
   const prompt = `You are a Canadian immigration program researcher.
 
@@ -27,7 +54,7 @@ export async function researchPrograms(
 
 ## Already in database
 ${existingIds.join(', ') || '(none)'}
-
+${webContext}
 Research and return 8-15 immigration programs suitable for this applicant (exclude already known programs).
 
 IMPORTANT research instructions:
@@ -42,6 +69,8 @@ IMPORTANT research instructions:
 - Include work permit pathways that can lead to PR (e.g., LMIA work permit → CEC)
 - For each province listed in target, list every stream the applicant could potentially qualify for
 - Also check provinces NOT in the target list if they have strong programs for this NOC code
+${webContext ? '- Use the web search results above to verify program details and find new programs not in your training data' : ''}
+- Mark source as "web_research" for programs verified against web search results, "llm_knowledge" otherwise
 
 Return a JSON array of programs, each with this structure:
 {
@@ -77,8 +106,9 @@ Return a JSON array of programs, each with this structure:
     "annual_quota": number or null,
     "competition_level": "low|medium|high|very_high"
   },
-  "source": "llm_knowledge",
-  "last_verified": "${new Date().toISOString().split('T')[0]}"
+  "source": "llm_knowledge or web_research",
+  "last_verified": "${new Date().toISOString().split('T')[0]}",
+  "url": "official program URL if known"
 }
 
 Return ONLY the JSON array.${langInstruction}`;
@@ -97,12 +127,29 @@ export async function researchProvince(
   province: string,
   profile: ApplicantProfile,
   existingDb: ProgramsDB,
+  config?: Config,
+  log: (msg: string) => void = () => {},
 ): Promise<ImmigrationProgram[]> {
   const langInstruction = getLlmLanguageInstruction();
   const existingForProvince = Object.values(existingDb)
     .filter(p => p.province === province)
     .map(p => `${p.id}: ${p.stream || p.name}`)
     .join(', ');
+
+  let webContext = '';
+  if (config) {
+    const queries = buildSearchQueries(province, profile.work_experience.noc_code);
+    const allResults: SearchResult[] = [];
+    for (const q of queries) {
+      const results = await webSearch(q, config);
+      allResults.push(...results);
+      if (allResults.length >= 15) break;
+    }
+    if (allResults.length > 0) {
+      webContext = `\n## Web Search Results for ${province}\n${formatSearchResults(allResults)}\n`;
+      log(`    ${allResults.length} web results for ${province}`);
+    }
+  }
 
   const prompt = `You are a Canadian immigration researcher specializing in ${province}.
 
@@ -115,7 +162,7 @@ export async function researchProvince(
 
 ## Already known for ${province}
 ${existingForProvince || '(none)'}
-
+${webContext}
 List ALL Provincial Nominee Program streams available in ${province}, including:
 1. Express Entry linked streams
 2. Employer-driven / job offer streams
@@ -125,6 +172,7 @@ List ALL Provincial Nominee Program streams available in ${province}, including:
 6. Rural / regional streams
 7. Semi-skilled worker streams
 8. Any other active streams
+${webContext ? '\nUse the web search results above to verify details, find new streams, and get current draw scores.\nMark source as "web_research" for programs found or verified via search results.' : ''}
 
 For each stream, provide full eligibility details even if the applicant may not qualify.
 This is a COMPREHENSIVE database — we want EVERY active stream, not just the best fit.
@@ -141,11 +189,19 @@ export async function researchAllPrograms(
   profile: ApplicantProfile,
   existingDb: ProgramsDB,
   log: (msg: string) => void = console.log,
+  config?: Config,
 ): Promise<ImmigrationProgram[]> {
   const allNew: ImmigrationProgram[] = [];
 
+  const hasSearch = !!(config?.search_api?.api_key);
+  if (hasSearch) {
+    log('  Web search API configured — will verify programs against live data');
+  } else {
+    log('  No web search API — using LLM knowledge only (configure with: immigration-optimizer config set search_api.provider tavily)');
+  }
+
   log('  Researching federal programs...');
-  const federal = await researchPrograms(provider, profile, existingDb);
+  const federal = await researchPrograms(provider, profile, existingDb, config, log);
   allNew.push(...federal);
   log(`  Found ${federal.length} federal/general programs`);
 
@@ -158,13 +214,17 @@ export async function researchAllPrograms(
     log(`  Researching ${province}...`);
     try {
       const merged = mergeProgramsDb(existingDb, allNew);
-      const provincial = await researchProvince(provider, province, profile, merged);
+      const provincial = await researchProvince(provider, province, profile, merged, config, log);
       allNew.push(...provincial);
       log(`  Found ${provincial.length} programs for ${province}`);
     } catch (err) {
       log(`  ${province}: research failed — ${err instanceof Error ? err.message : String(err)}`);
     }
   }
+
+  const webVerified = allNew.filter(p => p.source === 'web_research').length;
+  const llmOnly = allNew.filter(p => p.source === 'llm_knowledge').length;
+  log(`\n  Research complete: ${allNew.length} new programs (${webVerified} web-verified, ${llmOnly} LLM-only)`);
 
   return allNew;
 }

@@ -29,7 +29,7 @@ export async function researchCommand(): Promise<void> {
   const existing = Object.keys(programsDb).length;
   console.log(chalk.bold(`\n  Comprehensive immigration program research (${existing} already in database)\n`));
 
-  const newPrograms = await researchAllPrograms(provider, profile, programsDb, (msg) => console.log(msg));
+  const newPrograms = await researchAllPrograms(provider, profile, programsDb, (msg) => console.log(msg), config);
 
   const merged = mergeProgramsDb(programsDb, newPrograms);
   fs.writeFileSync(dbPath, JSON.stringify(merged, null, 2));
