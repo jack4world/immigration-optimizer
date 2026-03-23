@@ -27,14 +27,16 @@ export function readResults(resultsPath: string): IterationLog[] {
 
   return lines.slice(1).map(line => {
     const parts = line.split('\t');
+    const rawStatus = (parts[5] || '').trim().toLowerCase();
+    const isKept = rawStatus === 'keep' || rawStatus === 'kept' || rawStatus === 'baseline';
     return {
       iteration: parseInt(parts[0], 10) || 0,
       commit: parts[1] || '',
       score_before: parseFloat(parts[2]) || 0,
       score_after: parseFloat(parts[3]) || 0,
       delta: parseFloat(parts[4]) || 0,
-      status: (parts[5] as 'keep' | 'discard') || 'discard',
-      mutation_type: (parts[6] as any) || 'unknown',
+      status: (isKept ? 'keep' : 'discard') as 'keep' | 'discard',
+      mutation_type: (parts[6] || 'RESEARCH') as IterationLog['mutation_type'],
       description: parts[7] || '',
     };
   });
@@ -44,13 +46,17 @@ export function getLastBestScore(resultsPath: string): { score: number; iteratio
   const results = readResults(resultsPath);
   if (results.length === 0) return null;
 
-  // Find last "keep" entry
-  for (let i = results.length - 1; i >= 0; i--) {
-    if (results[i].status === 'keep') {
-      return { score: results[i].score_after, iteration: results[i].iteration };
+  let bestScore = 0;
+  let bestIteration = 0;
+
+  for (const r of results) {
+    if (r.status === 'keep' && r.score_after > bestScore) {
+      bestScore = r.score_after;
+      bestIteration = r.iteration;
     }
   }
 
-  // If no keeps, return baseline
+  if (bestScore > 0) return { score: bestScore, iteration: bestIteration };
+
   return { score: results[0].score_after, iteration: results[0].iteration };
 }
