@@ -49,6 +49,38 @@ export function ieltsToClb(band: number): number {
   return 3;
 }
 
+export function celpipToClb(level: number): number {
+  if (level >= 12) return 12;
+  if (level >= 4) return level;
+  return 3;
+}
+
+export function tefToClb(section: 'reading' | 'writing' | 'listening' | 'speaking', score: number): number {
+  const thresholds: Record<string, [number, number][]> = {
+    reading: [[263, 12], [248, 11], [233, 10], [218, 9], [206, 8], [194, 7], [181, 6], [151, 5], [121, 4]],
+    writing: [[393, 12], [371, 11], [349, 10], [310, 9], [271, 8], [232, 7], [205, 6], [181, 5], [145, 4]],
+    listening: [[316, 12], [298, 11], [280, 10], [249, 9], [217, 8], [181, 7], [145, 6], [109, 5], [68, 4]],
+    speaking: [[393, 12], [371, 11], [349, 10], [310, 9], [271, 8], [232, 7], [205, 6], [181, 5], [145, 4]],
+  };
+  for (const [min, clb] of thresholds[section]) {
+    if (score >= min) return clb;
+  }
+  return 3;
+}
+
+export function tcfToClb(section: 'reading' | 'writing' | 'listening' | 'speaking', score: number): number {
+  const thresholds: Record<string, [number, number][]> = {
+    reading: [[549, 12], [524, 11], [499, 10], [453, 9], [406, 8], [375, 7], [342, 6], [300, 5], [252, 4]],
+    writing: [[16, 12], [14, 11], [12, 10], [10, 9], [8, 8], [6, 7], [4, 6]],
+    listening: [[549, 12], [523, 11], [503, 10], [458, 9], [398, 8], [369, 7], [331, 6], [298, 5], [241, 4]],
+    speaking: [[16, 12], [14, 11], [12, 10], [10, 9], [8, 8], [6, 7], [4, 6]],
+  };
+  for (const [min, clb] of thresholds[section]) {
+    if (score >= min) return clb;
+  }
+  return 3;
+}
+
 function clbToPoints(clb: number, isMarried: boolean): number {
   if (!isMarried) {
     if (clb >= 10) return 34;

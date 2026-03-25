@@ -23,8 +23,14 @@ export async function webSearch(query: string, config: Config): Promise<SearchRe
   return [];
 }
 
+function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 15000): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(id));
+}
+
 async function tavilySearch(query: string, apiKey: string): Promise<SearchResult[]> {
-  const resp = await fetch('https://api.tavily.com/search', {
+  const resp = await fetchWithTimeout('https://api.tavily.com/search', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -45,7 +51,7 @@ async function tavilySearch(query: string, apiKey: string): Promise<SearchResult
 }
 
 async function serperSearch(query: string, apiKey: string): Promise<SearchResult[]> {
-  const resp = await fetch('https://google.serper.dev/search', {
+  const resp = await fetchWithTimeout('https://google.serper.dev/search', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -64,7 +70,7 @@ async function serperSearch(query: string, apiKey: string): Promise<SearchResult
 
 async function braveSearch(query: string, apiKey: string): Promise<SearchResult[]> {
   const params = new URLSearchParams({ q: query, count: '8' });
-  const resp = await fetch(`https://api.search.brave.com/res/v1/web/search?${params}`, {
+  const resp = await fetchWithTimeout(`https://api.search.brave.com/res/v1/web/search?${params}`, {
     headers: { 'X-Subscription-Token': apiKey, Accept: 'application/json' },
   });
   if (!resp.ok) return [];

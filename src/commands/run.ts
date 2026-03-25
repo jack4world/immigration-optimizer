@@ -8,7 +8,8 @@ import { runOptimizationLoop } from '../optimizer/loop.js';
 interface RunOptions {
   standalone?: boolean;
   headless?: boolean;
-  safe?: boolean;
+  yolo?: boolean;
+  maxIterations?: number;
 }
 
 export async function runCommand(options: RunOptions): Promise<void> {
@@ -40,5 +41,5 @@ export async function runCommand(options: RunOptions): Promise<void> {
   }
 
   const { launchAgent } = await import('./run-agent.js');
-  await launchAgent(cwd, { safe: options.safe, headless: options.headless });
+  await launchAgent(cwd, { yolo: options.yolo, headless: options.headless, maxIterations: options.maxIterations });
 }

@@ -52,7 +52,8 @@ program
   .description('Start the optimization loop (default: agent mode)')
   .option('--standalone', 'Use direct API calls instead of Claude Code agent')
   .option('--headless', 'Run agent non-interactively')
-  .option('--safe', 'Use normal permissions in agent mode')
+  .option('--yolo', 'Skip all permission prompts (dangerously-skip-permissions)')
+  .option('--max-iterations <n>', 'Maximum optimization iterations (default: 50)', parseInt)
   .action(runCommand);
 
 program

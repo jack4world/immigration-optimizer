@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateCRS, ieltsToClb } from '../../src/crs/calculator.js';
+import { calculateCRS, ieltsToClb, celpipToClb, tefToClb, tcfToClb } from '../../src/crs/calculator.js';
 import type { ApplicantProfile } from '../../src/data/schemas.js';
 
 function makeProfile(overrides: Partial<ApplicantProfile> = {}): ApplicantProfile {
@@ -27,6 +27,52 @@ describe('ieltsToClb', () => {
     expect(ieltsToClb(5.0)).toBe(5);
     expect(ieltsToClb(4.0)).toBe(4);
     expect(ieltsToClb(3.5)).toBe(3);
+  });
+});
+
+describe('celpipToClb', () => {
+  it('maps CELPIP levels directly to CLB', () => {
+    expect(celpipToClb(12)).toBe(12);
+    expect(celpipToClb(10)).toBe(10);
+    expect(celpipToClb(7)).toBe(7);
+    expect(celpipToClb(4)).toBe(4);
+  });
+
+  it('returns 3 for levels below 4', () => {
+    expect(celpipToClb(3)).toBe(3);
+    expect(celpipToClb(1)).toBe(3);
+  });
+});
+
+describe('tefToClb', () => {
+  it('converts TEF reading scores to CLB', () => {
+    expect(tefToClb('reading', 263)).toBe(12);
+    expect(tefToClb('reading', 248)).toBe(11);
+    expect(tefToClb('reading', 218)).toBe(9);
+    expect(tefToClb('reading', 121)).toBe(4);
+    expect(tefToClb('reading', 100)).toBe(3);
+  });
+
+  it('converts TEF listening scores to CLB', () => {
+    expect(tefToClb('listening', 316)).toBe(12);
+    expect(tefToClb('listening', 181)).toBe(7);
+    expect(tefToClb('listening', 50)).toBe(3);
+  });
+});
+
+describe('tcfToClb', () => {
+  it('converts TCF reading scores to CLB', () => {
+    expect(tcfToClb('reading', 549)).toBe(12);
+    expect(tcfToClb('reading', 453)).toBe(9);
+    expect(tcfToClb('reading', 252)).toBe(4);
+    expect(tcfToClb('reading', 200)).toBe(3);
+  });
+
+  it('converts TCF writing scores to CLB', () => {
+    expect(tcfToClb('writing', 16)).toBe(12);
+    expect(tcfToClb('writing', 10)).toBe(9);
+    expect(tcfToClb('writing', 4)).toBe(6);
+    expect(tcfToClb('writing', 2)).toBe(3);
   });
 });
 

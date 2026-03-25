@@ -1,61 +1,82 @@
+import { execSync } from 'child_process';
 import type { ApplicantProfile, CRSBreakdown } from '../data/schemas.js';
 import type { Config } from '../data/config.js';
 import { getLanguage } from '../i18n.js';
 import { calculateCRS } from '../crs/calculator.js';
 
-export function generateProgram(profile: ApplicantProfile, config: Config): string {
+function hasCliBinary(): boolean {
+  try {
+    execSync('which immigration-optimizer', { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function hasBrowserSkill(): boolean {
+  try {
+    const out = execSync('claude skill list 2>/dev/null || echo ""', { encoding: 'utf-8', timeout: 5000 });
+    return out.includes('agent-browser');
+  } catch {
+    return false;
+  }
+}
+
+export function generateProgram(profile: ApplicantProfile, config: Config, maxIterations = 50): string {
   const hasSearchApi = !!config.search_api?.api_key;
   const isZh = getLanguage() === 'zh';
   const crs = calculateCRS(profile);
+  const hasBrowser = hasBrowserSkill();
+  const cliCmd = hasCliBinary() ? 'immigration-optimizer' : 'npx tsx src/cli.ts';
 
   const engMin = profile.language.english
     ? Math.min(profile.language.english.reading, profile.language.english.writing,
                profile.language.english.listening, profile.language.english.speaking)
     : 0;
 
-  const crsGap = crs.total < 500 ? 500 - crs.total : 0;
   const needsPnp = crs.total < 480;
 
+  let sourceNum = 1;
   const researchSources = isZh
     ? `### 研究来源（按优先级排序）
-
-1. **浏览器研究**（使用 agent-browser 技能）：
+${hasBrowser ? `
+${sourceNum++}. **浏览器研究**（使用 agent-browser 技能）：
    - IRCC 官网: https://www.canada.ca/en/immigration-refugees-citizenship.html
    - 各省PNP官网获取最新项目要求、配额和抽签分数
    - Express Entry 最新抽签: https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/submit-profile/rounds-invitations.html
    - canadavisa.com 论坛获取实时审批时间线和经验
    - NOC 职业查询: https://noc.esdc.gc.ca/
-
-${hasSearchApi ? `2. **网络搜索 API**（已配置）：
+` : ''}
+${hasSearchApi ? `${sourceNum++}. **网络搜索 API**（已配置）：
    - "Canada Express Entry draw ${new Date().toISOString().substring(0, 7)}" — 获取最新分数线
    - "[province] PNP draw 2026 latest" — 各省最新抽签
    - "IRCC processing times ${new Date().getFullYear()}" — 最新处理时间
    - "NOC ${profile.work_experience.noc_code} Canada demand" — 职业需求
    - "[program name] eligibility requirements 2026" — 最新资格要求
-
-3. **LLM 知识**（备选）：` : `2. **LLM 知识**（主要来源）：
-`}   - 使用训练数据获取移民项目信息
+` : ''}
+${sourceNum}. **LLM 知识**${hasSearchApi || hasBrowser ? '（备选）' : '（主要来源）'}：
+   - 使用训练数据获取移民项目信息
    - 标记来源为 "llm_knowledge"
-   - 注意：政策可能已变更，需要通过浏览器验证关键信息`
-    : `### Research Sources (priority order)
-
-1. **Browser research** (use agent-browser skill):
+   - 注意：政策可能已变更${hasBrowser ? '，需要通过浏览器验证关键信息' : ''}`
+    : (() => { sourceNum = 1; return `### Research Sources (priority order)
+${hasBrowser ? `
+${sourceNum++}. **Browser research** (use agent-browser skill):
    - IRCC official: https://www.canada.ca/en/immigration-refugees-citizenship.html
    - Provincial PNP sites for latest requirements, quotas, draw scores
    - Latest EE draws: https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/submit-profile/rounds-invitations.html
    - canadavisa.com forums for real processing timelines
    - NOC lookup: https://noc.esdc.gc.ca/
-
-${hasSearchApi ? `2. **Web search API** (configured):
+` : ''}
+${hasSearchApi ? `${sourceNum++}. **Web search API** (configured):
    - "Canada Express Entry draw ${new Date().toISOString().substring(0, 7)}"
    - "[province] PNP draw 2026 latest"
    - "IRCC processing times ${new Date().getFullYear()}"
    - "NOC ${profile.work_experience.noc_code} Canada demand"
-
-3. **LLM knowledge** (fallback):` : `2. **LLM knowledge** (primary):
-`}   - Use training data for program info
+` : ''}
+${sourceNum}. **LLM knowledge** ${hasSearchApi || hasBrowser ? '(fallback)' : '(primary)'}:
+   - Use training data for program info
    - Flag as source: "llm_knowledge"
-   - Verify critical info via browser when possible`;
+   - Verify critical info via browser when possible`; })();
 
   const outputLanguage = isZh
     ? `\n## 输出语言\n所有输出（pathway.md、programs_db.json、commit messages）使用简体中文。\n`
@@ -74,9 +95,11 @@ ${hasSearchApi ? `2. **Web search API** (configured):
 ${crs.details.provincial_nomination > 0 ? `- 省提名: +600` : ''}
 
 ### CRS 提分策略（按投入产出比排序）
-${engMin < 10 ? `1. **重考语言** — 当前最低CLB ${engMin}，提升到CLB 10可增加约 ${(10 - engMin) * 4}-${(10 - engMin) * 8} 分` : ''}
-${!profile.language.french ? `${engMin < 10 ? '2' : '1'}. **考法语TEF/TCF** — CLB 7+ 可加 25-50 分（双语加分）` : ''}
-${!profile.education.has_canadian_credential ? `${!profile.language.french ? '3' : '2'}. **加拿大教育证书** — 短期课程可加 15-30 分` : ''}
+${(() => { let n = 1; const items: string[] = [];
+if (engMin < 10) items.push(`${n++}. **重考语言** — 当前最低CLB ${engMin}，提升到CLB 10可增加约 ${(10 - engMin) * 4}-${(10 - engMin) * 8} 分`);
+if (!profile.language.french) items.push(`${n++}. **考法语TEF/TCF** — CLB 7+ 可加 25-50 分（双语加分）`);
+if (!profile.education.has_canadian_credential) items.push(`${n++}. **加拿大教育证书** — 短期课程可加 15-30 分`);
+return items.join('\n'); })()}
 ${needsPnp ? `\n### 关键提醒\nCRS ${crs.total} 分低于近期全类别抽签线（~500+），建议:\n- 优先考虑PNP路线（省提名 +600 分，确保被邀请）\n- 或通过定向抽签（STEM、法语、医疗等类别邀请分数更低）` : ''}`
     : `## CRS Analysis
 
@@ -89,8 +112,10 @@ Current CRS: **${crs.total}**
 - Additional: ${crs.additional_points}
 
 ### CRS Improvement Strategies (by ROI)
-${engMin < 10 ? `1. **Retake language test** — min CLB ${engMin}, CLB 10 adds ~${(10 - engMin) * 4}-${(10 - engMin) * 8} points` : ''}
-${!profile.language.french ? `2. **Take French TEF/TCF** — CLB 7+ adds 25-50 points (bilingual bonus)` : ''}
+${(() => { let n = 1; const items: string[] = [];
+if (engMin < 10) items.push(`${n++}. **Retake language test** — min CLB ${engMin}, CLB 10 adds ~${(10 - engMin) * 4}-${(10 - engMin) * 8} points`);
+if (!profile.language.french) items.push(`${n++}. **Take French TEF/TCF** — CLB 7+ adds 25-50 points (bilingual bonus)`);
+return items.join('\n'); })()}
 ${needsPnp ? `\n### Key Warning\nCRS ${crs.total} is below recent general draws (~500+). Consider:\n- PNP route (+600 points, guarantees invitation)\n- Category-based draws (STEM, French, healthcare have lower cutoffs)` : ''}`;
 
   const scoringGuide = isZh
@@ -122,8 +147,8 @@ ${needsPnp ? `\n### Key Warning\nCRS ${crs.total} is below recent general draws 
 - 无需中断职业 → +5
 
 ### 评分命令
-在项目目录中运行: \`immigration-optimizer score\`
-查看实时仪表盘: \`immigration-optimizer dashboard --watch\``
+在项目目录中运行: \`${cliCmd} score\`
+查看实时仪表盘: \`${cliCmd} dashboard --watch\``
     : `## Scoring System
 
 Pathway scoring uses a **5-dimension + reward/penalty** system:
@@ -150,8 +175,8 @@ Pathway scoring uses a **5-dimension + reward/penalty** system:
 - 2+ backup pathways → +5
 
 ### Scoring Command
-Run in project dir: \`immigration-optimizer score\`
-Live dashboard: \`immigration-optimizer dashboard --watch\``;
+Run in project dir: \`${cliCmd} score\`
+Live dashboard: \`${cliCmd} dashboard --watch\``;
 
   const mutationStrategies = isZh
     ? `## 变异策略指南
@@ -223,7 +248,7 @@ Live dashboard: \`immigration-optimizer dashboard --watch\``;
 2. Read \`pathway.md\` — current immigration plan (being optimized)
 3. Read \`programs_db.json\` — immigration programs database
 4. Read \`rubrics.yaml\` — scoring criteria (dimensions + penalties + rewards)
-5. Score the baseline: \`immigration-optimizer score\`
+5. Score the baseline: \`${cliCmd} score\`
 6. Review score.json for dimension breakdown, penalties, and rewards
 7. Begin optimization
 
@@ -260,30 +285,36 @@ ${researchSources}
 - [ ] Entrepreneur, graduate, rural, tech, and skilled worker streams per province
 
 ### Comprehensive Research Command
-Run \`immigration-optimizer research\` to trigger a full province-by-province scan.
-${hasSearchApi ? 'Web search API is configured — the research command will automatically search the web for each province and federal program to verify and supplement LLM knowledge.' : 'Tip: Configure web search for real-time verification:\n  immigration-optimizer config set search_api.provider tavily\n  immigration-optimizer config set search_api.api_key <key>'}
+Run \`${cliCmd} research\` to trigger a full province-by-province scan.
+${hasSearchApi ? 'Web search API is configured — the research command will automatically search the web for each province and federal program to verify and supplement LLM knowledge.' : 'Tip: Configure web search for real-time verification:\n  ${cliCmd} config set search_api.provider tavily\n  ${cliCmd} config set search_api.api_key <key>'}
 
 After researching, update \`programs_db.json\` with new programs and change \`source\` from "llm_knowledge" to "web_research" or "ircc_official" for verified data.
 Git commit: \`research: verified [N] programs, added [N] new\`
 
 ## Phase 2: Optimization Loop
 
+Maximum iterations: **${maxIterations}**
+
 \`\`\`
-LOOP FOREVER:
+FOR iteration = 1 to ${maxIterations}:
 
 1. Pick mutation type (rotate: SWAP_PROGRAM → ADD_CREDENTIAL → REORDER_STEPS → ADD_PARALLEL → SWITCH_PROVINCE)
    If 5+ consecutive discards → RESEARCH
 
 2. Make ONE change to pathway.md
 3. Git commit: "[MUTATION_TYPE]: [specific description]"
-4. Score: immigration-optimizer score
+4. Score: \`${cliCmd} score\`
    (Read score.json for detailed breakdown)
 5. If score improved → keep the commit
 6. If score equal or worse → git reset --hard HEAD~1
-7. Append to results.tsv (tab-separated):
-   iteration<TAB>commit<TAB>score_before<TAB>score_after<TAB>delta<TAB>status<TAB>mutation_type<TAB>description
-8. NEVER STOP — run until interrupted
+7. Append to results.tsv using actual TAB characters (not spaces) between fields:
+   iteration	commit	score_before	score_after	delta	status	mutation_type	description
+8. Stop after iteration ${maxIterations} or when interrupted
 \`\`\`
+
+### Baseline (iteration 0)
+Before entering the loop, score the initial pathway.md and write iteration 0 to results.tsv:
+\`0	<commit>	0.00	<score>	+<score>	keep	RESEARCH	baseline scored\`
 
 ${mutationStrategies}
 
@@ -311,7 +342,7 @@ ${!profile.preferences.willing_to_relocate_province ? '- NOT willing to relocate
 ## Context Management
 - Write research findings to programs_db.json immediately
 - Read results.tsv periodically to avoid repeating failed mutations
-- Use \`immigration-optimizer status\` to check progress
-- Use \`immigration-optimizer dashboard\` for full overview
+- Use \`${cliCmd} status\` to check progress
+- Use \`${cliCmd} dashboard\` for full overview
 `;
 }

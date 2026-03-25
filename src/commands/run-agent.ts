@@ -9,7 +9,13 @@ import { calculateCRS } from '../crs/calculator.js';
 import { checkEligibility } from '../crs/eligibility.js';
 import type { ApplicantProfile, ProgramsDB } from '../data/schemas.js';
 
-export async function launchAgent(pathwayDir: string, options: { safe?: boolean; headless?: boolean }): Promise<void> {
+const DEFAULT_MAX_ITERATIONS = 50;
+
+export async function launchAgent(pathwayDir: string, options: {
+  yolo?: boolean;
+  headless?: boolean;
+  maxIterations?: number;
+}): Promise<void> {
   try {
     execSync('which claude', { stdio: 'ignore' });
   } catch {
@@ -24,9 +30,10 @@ export async function launchAgent(pathwayDir: string, options: { safe?: boolean;
     process.exit(1);
   }
 
-  const profile = yaml.load(fs.readFileSync(profilePath, 'utf-8')) as ApplicantProfile;
+  const profile = yaml.load(fs.readFileSync(profilePath, 'utf-8'), { schema: yaml.JSON_SCHEMA }) as ApplicantProfile;
   const config = loadConfig();
   const crs = calculateCRS(profile);
+  const maxIterations = options.maxIterations ?? DEFAULT_MAX_ITERATIONS;
 
   // Show pre-launch summary
   console.log(chalk.bold.cyan(`\n  ┌─────────────────────────────────────────┐`));
@@ -48,43 +55,22 @@ export async function launchAgent(pathwayDir: string, options: { safe?: boolean;
   }
 
   // Generate program.md
-  const programContent = generateProgram(profile, config);
+  const programContent = generateProgram(profile, config, maxIterations);
   const programPath = path.join(pathwayDir, 'program.md');
   fs.writeFileSync(programPath, programContent);
   console.log(`  Program:   ${chalk.green('program.md generated')}`);
 
   const args: string[] = [];
-  if (!options.safe) {
+  if (options.yolo) {
     args.push('--dangerously-skip-permissions');
   }
 
-  const mode = options.safe ? 'safe' : 'yolo';
+  const mode = options.yolo ? 'yolo' : 'safe';
   console.log(`  Mode:      ${mode === 'yolo' ? chalk.yellow(mode) : chalk.green(mode)}`);
+  console.log(`  Max iter:  ${maxIterations}`);
 
   if (options.headless) {
-    const prompt = [
-      'Read program.md for full instructions. Then execute this loop:',
-      '',
-      'SETUP: Read profile.yaml, pathway.md, programs_db.json, rubrics.yaml.',
-      '',
-      'SCORING: For each scoring pass, read rubrics.yaml dimensions and score pathway.md on each dimension (0-100).',
-      'Write score.json with format: {"mode":"absolute","composite_score":N,"components":{"dim":{"score":N,"weight":N,"sub_dimensions":{"sub":{"score":N,"note":"..."}}},...},"penalties":[],"rewards":[],"holistic_adjustments":[],"scored_at":"ISO","model":"claude"}',
-      '',
-      'BASELINE: Score the initial pathway.md. Write iteration 0 to results.tsv:',
-      '0\\t<commit>\\t0.00\\t<score>\\t+<score>\\tkeep\\tRESEARCH\\tbaseline scored',
-      '',
-      'LOOP: For each iteration N:',
-      '1. Pick mutation type rotating: SWAP_PROGRAM, ADD_CREDENTIAL, REORDER_STEPS, ADD_PARALLEL, SWITCH_PROVINCE (or RESEARCH if 5+ discards)',
-      '2. Generate ONE change to pathway.md',
-      '3. git add pathway.md && git commit -m "<TYPE>: <description>"',
-      '4. Score the new pathway',
-      '5. If new score > old score: KEEP (update current score)',
-      '6. If new score <= old score: git reset --hard HEAD~1',
-      '7. Append tab-separated line to results.tsv: N\\t<commit>\\t<before>\\t<after>\\t<delta>\\t<keep|discard>\\t<TYPE>\\t<desc>',
-      '8. Continue forever until interrupted',
-      '',
-      'IMPORTANT: Always append to results.tsv (do NOT overwrite). Always use tab separators. The dashboard reads this file.',
-    ].join('\n');
+    const prompt = 'Read program.md for full instructions. Execute the setup steps, then run the optimization loop as described in Phase 2. Stop after the maximum iterations specified in program.md.';
 
     args.push('-p', prompt);
     console.log(chalk.bold(`\n  Launching headless...\n`));
@@ -97,13 +83,21 @@ export async function launchAgent(pathwayDir: string, options: { safe?: boolean;
     child.stdout?.on('data', (data: Buffer) => { process.stdout.write(data); });
     child.stderr?.on('data', (data: Buffer) => { process.stderr.write(data); });
 
+    const forwardSignal = (sig: NodeJS.Signals) => { child.kill(sig); };
+    process.on('SIGINT', forwardSignal);
+    process.on('SIGTERM', forwardSignal);
+
     return new Promise<void>((resolve) => {
       child.on('close', (code) => {
+        process.off('SIGINT', forwardSignal);
+        process.off('SIGTERM', forwardSignal);
         const msg = code === 0 || code === null ? 'Agent exited cleanly.' : `Agent exited with code ${code}.`;
         console.log((code === 0 || code === null ? chalk.green : chalk.yellow)(`\n  ${msg}\n`));
         resolve();
       });
       child.on('error', (err) => {
+        process.off('SIGINT', forwardSignal);
+        process.off('SIGTERM', forwardSignal);
         console.log(chalk.red(`\n  Failed to launch Claude Code: ${err.message}\n`));
         resolve();
       });
@@ -120,13 +114,21 @@ export async function launchAgent(pathwayDir: string, options: { safe?: boolean;
     stdio: 'inherit',
   });
 
+  const forwardSignal = (sig: NodeJS.Signals) => { child.kill(sig); };
+  process.on('SIGINT', forwardSignal);
+  process.on('SIGTERM', forwardSignal);
+
   return new Promise<void>((resolve) => {
     child.on('close', (code) => {
+      process.off('SIGINT', forwardSignal);
+      process.off('SIGTERM', forwardSignal);
       const msg = code === 0 || code === null ? 'Agent session ended.' : `Agent exited with code ${code}.`;
       console.log((code === 0 || code === null ? chalk.green : chalk.yellow)(`\n  ${msg}\n`));
       resolve();
     });
     child.on('error', (err) => {
+      process.off('SIGINT', forwardSignal);
+      process.off('SIGTERM', forwardSignal);
       console.log(chalk.red(`\n  Failed to launch Claude Code: ${err.message}\n`));
       resolve();
     });

@@ -59,10 +59,12 @@ export function checkEligibility(
     }
   }
 
-  if (req.eligible_noc_codes && !req.eligible_noc_codes.includes(profile.work_experience.noc_code)) {
-    unmet.push(`NOC ${profile.work_experience.noc_code} 不在项目合格列表中`);
-  } else {
-    met.push(`NOC ${profile.work_experience.noc_code} 合格`);
+  if (req.eligible_noc_codes) {
+    if (req.eligible_noc_codes.includes(profile.work_experience.noc_code)) {
+      met.push(`NOC ${profile.work_experience.noc_code} 合格`);
+    } else {
+      unmet.push(`NOC ${profile.work_experience.noc_code} 不在项目合格列表中`);
+    }
   }
 
   if (req.requires_job_offer && !profile.canadian_ties.has_job_offer) {
