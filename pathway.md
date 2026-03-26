@@ -199,7 +199,7 @@ generated_at: "2026-03-25"
 - 机械工程NOC 21301属于Ontario需求职业（TEER 1，制造业重点领域）
 - Ontario HCP定期针对特定NOC/行业发出定向邀请，NOC 21301历史上多次被选中
 - Ontario是申请人首选省份，有优质中学教育资源
-- **额外选项**: 如法语达CLB 7，可同时符合Ontario French-Speaking Skilled Worker Stream
+- **额外选项**: 如法语达CLB 7，自动符合Ontario French-Speaking Skilled Worker Stream（竞争"low"，配额3000，相当于第4条PNP路线）
 
 **资格检查**:
 - ✅ Express Entry档案有效

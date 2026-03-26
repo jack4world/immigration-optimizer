@@ -966,6 +966,50 @@
     "source": "llm_knowledge",
     "last_verified": "2026-03-26"
   },
+  "on_french_speaking": {
+    "id": "on_french_speaking",
+    "name": "Ontario PNP - French-Speaking Skilled Worker Stream",
+    "name_zh": "安大略省提名 - 法语技术工人类别",
+    "category": "pnp",
+    "stream": "French-Speaking Skilled Worker",
+    "province": "Ontario",
+    "description": "For French-speaking EE candidates intending to live in Ontario",
+    "description_zh": "面向法语能力达标且计划在安大略省定居的EE候选人",
+    "eligibility": {
+      "min_clb": 6,
+      "min_education": "bachelors",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 1,
+      "min_noc_teer": 3,
+      "min_settlement_funds": 0,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Active Express Entry profile under FSWP or CEC",
+        "French CLB 7+ in all abilities",
+        "English CLB 6+ in all abilities",
+        "Intention to live and work in Ontario"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 3,
+        "max": 6
+      },
+      "application_fee_cad": 1500,
+      "additional_costs": [],
+      "total_estimated_cost_cad": 1500
+    },
+    "metrics": {
+      "success_rate_estimate": 80,
+      "annual_quota": 3000,
+      "competition_level": "low",
+      "draw_frequency": "periodic"
+    },
+    "source": "llm_knowledge",
+    "last_verified": "2026-03-26"
+  },
   "on_skilled_trades": {
     "id": "on_skilled_trades",
     "name": "Ontario PNP - Skilled Trades Stream",
