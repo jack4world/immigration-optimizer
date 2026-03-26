@@ -1,0 +1,925 @@
+{
+  "ee_fswp": {
+    "id": "ee_fswp",
+    "name": "Express Entry - Federal Skilled Worker Program",
+    "name_zh": "快速通道 - 联邦技术移民",
+    "category": "express_entry",
+    "description": "Points-based system for skilled workers with foreign work experience",
+    "description_zh": "基于积分的联邦技术移民项目，面向有海外工作经验的技术工人",
+    "eligibility": {
+      "min_clb": 7,
+      "min_education": "high_school",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 1,
+      "min_noc_teer": 3,
+      "min_settlement_funds": 13757,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Must score 67+ on FSW selection grid"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 5,
+        "max": 8
+      },
+      "application_fee_cad": 1365,
+      "additional_costs": [
+        {
+          "item": "Biometrics",
+          "cost_cad": 85
+        },
+        {
+          "item": "Medical exam",
+          "cost_cad": 450
+        },
+        {
+          "item": "Police certificate",
+          "cost_cad": 100
+        }
+      ],
+      "total_estimated_cost_cad": 2000
+    },
+    "metrics": {
+      "success_rate_estimate": 85,
+      "historical_cutoff_crs": 524,
+      "annual_quota": 110000,
+      "competition_level": "high",
+      "draw_frequency": "bi-weekly"
+    },
+    "source": "ircc_official",
+    "last_verified": "2026-03-01",
+    "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/eligibility/federal-skilled-workers.html"
+  },
+  "ee_cec": {
+    "id": "ee_cec",
+    "name": "Express Entry - Canadian Experience Class",
+    "name_zh": "快速通道 - 加拿大经验类",
+    "category": "express_entry",
+    "description": "For skilled workers with Canadian work experience",
+    "description_zh": "面向有加拿大工作经验的技术工人",
+    "eligibility": {
+      "min_clb": 7,
+      "min_education": "high_school",
+      "min_work_years_canadian": 1,
+      "min_work_years_foreign": 0,
+      "min_noc_teer": 3,
+      "min_settlement_funds": 0,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "12 months Canadian work experience in last 3 years"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 4,
+        "max": 6
+      },
+      "application_fee_cad": 1365,
+      "additional_costs": [
+        {
+          "item": "Biometrics",
+          "cost_cad": 85
+        },
+        {
+          "item": "Medical exam",
+          "cost_cad": 450
+        }
+      ],
+      "total_estimated_cost_cad": 1900
+    },
+    "metrics": {
+      "success_rate_estimate": 90,
+      "historical_cutoff_crs": 510,
+      "annual_quota": 82880,
+      "competition_level": "high",
+      "draw_frequency": "bi-weekly"
+    },
+    "source": "ircc_official",
+    "last_verified": "2026-03-01",
+    "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/eligibility/canadian-experience-class.html"
+  },
+  "ee_fstp": {
+    "id": "ee_fstp",
+    "name": "Express Entry - Federal Skilled Trades Program",
+    "name_zh": "快速通道 - 联邦技工移民",
+    "category": "express_entry",
+    "description": "For qualified tradespersons with Canadian work experience or job offer",
+    "description_zh": "面向合格技工的联邦移民项目",
+    "eligibility": {
+      "min_clb": 5,
+      "min_education": "high_school",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 2,
+      "min_noc_teer": 2,
+      "min_settlement_funds": 13757,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Trade certification or qualification",
+        "NOC TEER 2/3 trade occupations only"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 5,
+        "max": 8
+      },
+      "application_fee_cad": 1365,
+      "additional_costs": [
+        {
+          "item": "Biometrics",
+          "cost_cad": 85
+        },
+        {
+          "item": "Medical exam",
+          "cost_cad": 450
+        }
+      ],
+      "total_estimated_cost_cad": 1900
+    },
+    "metrics": {
+      "success_rate_estimate": 80,
+      "historical_cutoff_crs": 388,
+      "annual_quota": 10000,
+      "competition_level": "medium",
+      "draw_frequency": "bi-weekly"
+    },
+    "source": "ircc_official",
+    "last_verified": "2026-03-01"
+  },
+  "atlantic_aipp": {
+    "id": "atlantic_aipp",
+    "name": "Atlantic Immigration Program",
+    "name_zh": "大西洋移民计划",
+    "category": "atlantic",
+    "description": "Employer-driven immigration for Atlantic provinces (NB, NS, PEI, NL)",
+    "description_zh": "大西洋四省雇主驱动的移民计划",
+    "eligibility": {
+      "min_clb": 5,
+      "min_education": "high_school",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 1,
+      "min_noc_teer": 4,
+      "min_settlement_funds": 0,
+      "requires_job_offer": true,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Job offer from designated Atlantic employer",
+        "Settlement plan"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 6,
+        "max": 12
+      },
+      "application_fee_cad": 1365,
+      "additional_costs": [
+        {
+          "item": "Biometrics",
+          "cost_cad": 85
+        },
+        {
+          "item": "Medical exam",
+          "cost_cad": 450
+        },
+        {
+          "item": "Settlement plan",
+          "cost_cad": 0
+        }
+      ],
+      "total_estimated_cost_cad": 1900
+    },
+    "metrics": {
+      "success_rate_estimate": 88,
+      "annual_quota": 8500,
+      "competition_level": "medium"
+    },
+    "source": "ircc_official",
+    "last_verified": "2026-03-01"
+  },
+  "on_hcp": {
+    "id": "on_hcp",
+    "name": "Ontario PNP - Human Capital Priorities",
+    "name_zh": "安大略省提名 - 人力资本优先",
+    "category": "pnp",
+    "stream": "Human Capital Priorities",
+    "province": "Ontario",
+    "description": "Ontario selects high-scoring EE candidates in-demand occupations",
+    "description_zh": "安大略省从EE候选池中选择高分且职业紧缺的候选人",
+    "eligibility": {
+      "min_clb": 7,
+      "min_education": "bachelors",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 1,
+      "min_noc_teer": 1,
+      "min_settlement_funds": 0,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Active Express Entry profile",
+        "CRS score within Ontario search criteria",
+        "Intended to live in Ontario"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 3,
+        "max": 6
+      },
+      "application_fee_cad": 1500,
+      "additional_costs": [],
+      "total_estimated_cost_cad": 1500
+    },
+    "metrics": {
+      "success_rate_estimate": 75,
+      "annual_quota": 9750,
+      "competition_level": "high"
+    },
+    "source": "provincial_official",
+    "last_verified": "2026-03-01"
+  },
+  "bc_tech": {
+    "id": "bc_tech",
+    "name": "BC PNP - Tech Stream",
+    "name_zh": "BC省提名 - 科技行业通道",
+    "category": "pnp",
+    "stream": "Tech",
+    "province": "British Columbia",
+    "description": "Fast-track for tech workers with BC job offers in eligible occupations",
+    "description_zh": "BC省科技行业快速通道，面向持有BC省科技公司offer的候选人",
+    "eligibility": {
+      "min_clb": 4,
+      "min_education": "high_school",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 2,
+      "min_noc_teer": 2,
+      "min_settlement_funds": 0,
+      "requires_job_offer": true,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Job offer from BC tech company in eligible occupation",
+        "Job offer minimum 1 year duration",
+        "29 eligible tech occupations"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 2,
+        "max": 4
+      },
+      "application_fee_cad": 1750,
+      "additional_costs": [],
+      "total_estimated_cost_cad": 1750
+    },
+    "metrics": {
+      "success_rate_estimate": 85,
+      "annual_quota": 4000,
+      "competition_level": "medium",
+      "draw_frequency": "weekly"
+    },
+    "source": "provincial_official",
+    "last_verified": "2026-03-01"
+  },
+  "startup_visa": {
+    "id": "startup_visa",
+    "name": "Start-Up Visa Program",
+    "name_zh": "创业签证计划",
+    "category": "startup_visa",
+    "description": "For entrepreneurs with a qualifying business supported by a designated organization",
+    "description_zh": "面向获得指定机构支持的创业者",
+    "eligibility": {
+      "min_clb": 5,
+      "min_education": "high_school",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 0,
+      "min_noc_teer": 5,
+      "min_settlement_funds": 13757,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Letter of support from designated organization",
+        "Qualifying business",
+        "Essential to ongoing operations of the business"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 12,
+        "max": 36
+      },
+      "application_fee_cad": 2140,
+      "additional_costs": [
+        {
+          "item": "Business plan development",
+          "cost_cad": 5000
+        },
+        {
+          "item": "Biometrics",
+          "cost_cad": 85
+        }
+      ],
+      "total_estimated_cost_cad": 7225
+    },
+    "metrics": {
+      "success_rate_estimate": 60,
+      "annual_quota": 5000,
+      "competition_level": "medium"
+    },
+    "source": "ircc_official",
+    "last_verified": "2026-03-01"
+  },
+  "sk_international_skilled_worker": {
+    "id": "sk_international_skilled_worker",
+    "name": "Saskatchewan PNP - International Skilled Worker",
+    "name_zh": "萨斯喀彻温省提名 - 国际技术工人",
+    "category": "pnp",
+    "stream": "International Skilled Worker - Employment Offer",
+    "province": "Saskatchewan",
+    "description": "For skilled workers with a job offer from a Saskatchewan employer",
+    "description_zh": "面向持有萨省雇主offer的技术工人",
+    "eligibility": {
+      "min_clb": 4,
+      "min_education": "one_year_diploma",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 1,
+      "min_noc_teer": 3,
+      "min_settlement_funds": 0,
+      "requires_job_offer": true,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Score 60+ on Saskatchewan assessment grid"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 3,
+        "max": 6
+      },
+      "application_fee_cad": 350,
+      "additional_costs": [],
+      "total_estimated_cost_cad": 350
+    },
+    "metrics": {
+      "success_rate_estimate": 80,
+      "annual_quota": 6000,
+      "competition_level": "low"
+    },
+    "source": "provincial_official",
+    "last_verified": "2026-03-01"
+  },
+  "ab_express_entry_stream": {
+    "id": "ab_express_entry_stream",
+    "name": "Alberta PNP - Alberta Express Entry Stream",
+    "name_zh": "阿尔伯塔省提名 - 快速通道类别",
+    "category": "pnp",
+    "stream": "Alberta Express Entry Stream",
+    "province": "Alberta",
+    "description": "Alberta selects candidates from the federal EE pool with strong ties or occupation demand in Alberta",
+    "description_zh": "阿尔伯塔省从联邦EE候选池中选择与阿省有联系或职业紧缺的候选人，无需工签或job offer",
+    "eligibility": {
+      "min_clb": 7,
+      "min_education": "high_school",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 1,
+      "min_noc_teer": 3,
+      "min_settlement_funds": 0,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Active Express Entry profile",
+        "CRS score within Alberta search criteria",
+        "Occupation in demand in Alberta or strong ties to province",
+        "Intention to live and work in Alberta"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 3,
+        "max": 6
+      },
+      "application_fee_cad": 500,
+      "additional_costs": [],
+      "total_estimated_cost_cad": 500
+    },
+    "metrics": {
+      "success_rate_estimate": 75,
+      "annual_quota": 9750,
+      "competition_level": "medium",
+      "draw_frequency": "monthly"
+    },
+    "source": "provincial_official",
+    "last_verified": "2026-03-01"
+  },
+  "ab_accelerated_tech": {
+    "id": "ab_accelerated_tech",
+    "name": "Alberta PNP - Accelerated Tech Pathway",
+    "name_zh": "阿尔伯塔省提名 - 科技人才加速通道",
+    "category": "pnp",
+    "stream": "Accelerated Tech Pathway",
+    "province": "Alberta",
+    "description": "Fast-track for tech workers with Alberta job offers in priority tech occupations",
+    "description_zh": "阿尔伯塔省科技人才加速通道，面向持有阿省科技公司offer的候选人，处理速度快",
+    "eligibility": {
+      "min_clb": 5,
+      "min_education": "high_school",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 1,
+      "min_noc_teer": 2,
+      "min_settlement_funds": 0,
+      "requires_job_offer": true,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Job offer from Alberta tech company in eligible occupation",
+        "Occupation on Alberta tech priority list",
+        "Full-time, minimum 1 year duration"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 2,
+        "max": 4
+      },
+      "application_fee_cad": 500,
+      "additional_costs": [],
+      "total_estimated_cost_cad": 500
+    },
+    "metrics": {
+      "success_rate_estimate": 82,
+      "annual_quota": 3000,
+      "competition_level": "medium",
+      "draw_frequency": "monthly"
+    },
+    "source": "provincial_official",
+    "last_verified": "2026-03-01"
+  },
+  "ab_foreign_graduate_entrepreneur": {
+    "id": "ab_foreign_graduate_entrepreneur",
+    "name": "Alberta PNP - Foreign Graduate Entrepreneur Stream",
+    "name_zh": "阿尔伯塔省提名 - 外国毕业生创业类别",
+    "category": "pnp",
+    "stream": "Foreign Graduate Entrepreneur Stream",
+    "province": "Alberta",
+    "description": "For foreign graduates who started or acquired a business in Alberta",
+    "description_zh": "面向在阿尔伯塔省创业或收购企业的外国毕业生，需持有效毕业后工签并经营企业满1年",
+    "eligibility": {
+      "min_clb": 7,
+      "min_education": "two_year_diploma",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 0,
+      "min_noc_teer": 5,
+      "min_settlement_funds": 0,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Graduated from designated Canadian or foreign post-secondary institution",
+        "Started or acquired a business in Alberta",
+        "Operated the business for at least 1 year in Alberta",
+        "Business meets minimum revenue and employment requirements",
+        "Valid post-graduation work permit (or equivalent)"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 6,
+        "max": 12
+      },
+      "application_fee_cad": 3500,
+      "additional_costs": [
+        {
+          "item": "Business plan development",
+          "cost_cad": 3000
+        },
+        {
+          "item": "Business registration",
+          "cost_cad": 500
+        }
+      ],
+      "total_estimated_cost_cad": 7000
+    },
+    "metrics": {
+      "success_rate_estimate": 65,
+      "annual_quota": 500,
+      "competition_level": "medium"
+    },
+    "source": "provincial_official",
+    "last_verified": "2026-03-01"
+  },
+  "ab_rural_entrepreneur": {
+    "id": "ab_rural_entrepreneur",
+    "name": "Alberta PNP - Rural Entrepreneur Stream",
+    "name_zh": "阿尔伯塔省提名 - 农村企业家类别",
+    "category": "pnp",
+    "stream": "Rural Entrepreneur Stream",
+    "province": "Alberta",
+    "description": "For entrepreneurs who want to start or buy a business in rural Alberta communities",
+    "description_zh": "面向希望在阿尔伯塔农村社区创业或收购企业的企业家",
+    "eligibility": {
+      "min_clb": 5,
+      "min_education": "high_school",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 3,
+      "min_noc_teer": 5,
+      "min_settlement_funds": 0,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Minimum net worth of $300,000 CAD",
+        "Minimum investment of $100,000 CAD in Alberta business",
+        "Business plan endorsed by designated rural community",
+        "Exploratory visit to the community required",
+        "Business must create at least 1 local job"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 12,
+        "max": 24
+      },
+      "application_fee_cad": 3500,
+      "additional_costs": [
+        {
+          "item": "Exploratory visit",
+          "cost_cad": 3000
+        },
+        {
+          "item": "Business plan development",
+          "cost_cad": 5000
+        },
+        {
+          "item": "Business investment (minimum)",
+          "cost_cad": 100000
+        }
+      ],
+      "total_estimated_cost_cad": 111500
+    },
+    "metrics": {
+      "success_rate_estimate": 70,
+      "annual_quota": 400,
+      "competition_level": "low"
+    },
+    "source": "provincial_official",
+    "last_verified": "2026-03-01"
+  },
+  "ab_graduate_entrepreneur": {
+    "id": "ab_graduate_entrepreneur",
+    "name": "Alberta PNP - Graduate Entrepreneur Stream",
+    "name_zh": "阿尔伯塔省提名 - 阿省毕业生创业类别",
+    "category": "pnp",
+    "stream": "Graduate Entrepreneur Stream",
+    "province": "Alberta",
+    "description": "For international graduates of Alberta post-secondary institutions who start a business in Alberta",
+    "description_zh": "面向阿尔伯塔省高校国际毕业生在阿省创业的移民通道",
+    "eligibility": {
+      "min_clb": 7,
+      "min_education": "two_year_diploma",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 0,
+      "min_noc_teer": 5,
+      "min_settlement_funds": 0,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Graduated from Alberta DLI within 2 years",
+        "Valid PGWP",
+        "Started and operated a business in Alberta for 6+ months",
+        "At least 34% ownership in the business",
+        "Business meets minimum revenue threshold"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 4,
+        "max": 8
+      },
+      "application_fee_cad": 3500,
+      "additional_costs": [
+        {
+          "item": "Business registration and setup",
+          "cost_cad": 2000
+        }
+      ],
+      "total_estimated_cost_cad": 5500
+    },
+    "metrics": {
+      "success_rate_estimate": 72,
+      "annual_quota": 600,
+      "competition_level": "low"
+    },
+    "source": "provincial_official",
+    "last_verified": "2026-03-01"
+  },
+  "ab_opportunity_stream": {
+    "id": "ab_opportunity_stream",
+    "name": "Alberta PNP - Alberta Opportunity Stream",
+    "name_zh": "阿尔伯塔省提名 - 机会类别",
+    "category": "pnp",
+    "stream": "Alberta Opportunity Stream",
+    "province": "Alberta",
+    "description": "For foreign workers currently working in Alberta with valid work permit",
+    "description_zh": "面向目前持有效工签在阿省工作的外籍工人",
+    "eligibility": {
+      "min_clb": 4,
+      "min_education": "high_school",
+      "min_work_years_canadian": 1,
+      "min_work_years_foreign": 0,
+      "min_noc_teer": 4,
+      "min_settlement_funds": 0,
+      "requires_job_offer": true,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Currently working in Alberta with valid work permit",
+        "Full-time job in Alberta",
+        "Occupation not on Alberta ineligible list"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 3,
+        "max": 8
+      },
+      "application_fee_cad": 500,
+      "additional_costs": [],
+      "total_estimated_cost_cad": 500
+    },
+    "metrics": {
+      "success_rate_estimate": 82,
+      "annual_quota": 9750,
+      "competition_level": "medium"
+    },
+    "source": "provincial_official",
+    "last_verified": "2026-03-01"
+  },
+  "mb_skilled_worker": {
+    "id": "mb_skilled_worker",
+    "name": "Manitoba PNP - Skilled Worker Overseas",
+    "name_zh": "曼尼托巴省提名 - 海外技术工人",
+    "category": "pnp",
+    "stream": "Skilled Worker Overseas",
+    "province": "Manitoba",
+    "description": "For skilled workers with connection to Manitoba (friend/family or previous work/study)",
+    "description_zh": "面向与曼省有联系的海外技术工人",
+    "eligibility": {
+      "min_clb": 7,
+      "min_education": "one_year_diploma",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 2,
+      "min_noc_teer": 3,
+      "min_settlement_funds": 13757,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Connection to Manitoba (family, friend, previous study/work)",
+        "Score 60+ on Manitoba assessment"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 6,
+        "max": 12
+      },
+      "application_fee_cad": 500,
+      "additional_costs": [],
+      "total_estimated_cost_cad": 500
+    },
+    "metrics": {
+      "success_rate_estimate": 70,
+      "annual_quota": 5500,
+      "competition_level": "medium"
+    },
+    "source": "provincial_official",
+    "last_verified": "2026-03-01"
+  },
+  "qc_skilled_worker": {
+    "id": "qc_skilled_worker",
+    "name": "Quebec Skilled Worker Program (QSWP / Arrima)",
+    "name_zh": "魁北克技术移民 (Arrima)",
+    "category": "quebec",
+    "stream": "Regular Skilled Worker",
+    "province": "Quebec",
+    "description": "Quebec's own points-based skilled worker selection via Arrima portal, independent from federal Express Entry",
+    "description_zh": "魁北克独立的技术移民积分系统，通过Arrima门户申请，不走联邦快速通道",
+    "eligibility": {
+      "min_clb": 7,
+      "min_education": "high_school",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 1,
+      "min_noc_teer": 3,
+      "min_settlement_funds": 0,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Expression of interest via Arrima portal",
+        "Invitation from MIFI (Quebec immigration ministry)",
+        "Score well on Quebec selection grid (age, education, language, work, adaptability)",
+        "French language ability strongly favored (high weight in grid)",
+        "Validated job offer (VJO) gives significant bonus points"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 12,
+        "max": 24
+      },
+      "application_fee_cad": 827,
+      "additional_costs": [
+        {
+          "item": "Principal applicant CSQ fee",
+          "cost_cad": 827
+        },
+        {
+          "item": "Spouse CSQ fee",
+          "cost_cad": 186
+        },
+        {
+          "item": "Federal PR application",
+          "cost_cad": 1365
+        }
+      ],
+      "total_estimated_cost_cad": 2378
+    },
+    "metrics": {
+      "success_rate_estimate": 70,
+      "annual_quota": 33000,
+      "competition_level": "high",
+      "draw_frequency": "periodic invitations from Arrima"
+    },
+    "source": "provincial_official",
+    "last_verified": "2026-03-01",
+    "url": "https://www.quebec.ca/en/immigration/permanent/skilled-workers/regular-skilled-worker-program"
+  },
+  "qc_experience_peq": {
+    "id": "qc_experience_peq",
+    "name": "Quebec Experience Program (PEQ)",
+    "name_zh": "魁北克经验类移民 (PEQ)",
+    "category": "quebec",
+    "stream": "Quebec Experience",
+    "province": "Quebec",
+    "description": "Fast-track for foreign workers or graduates with Quebec work/study experience and intermediate French",
+    "description_zh": "面向在魁北克有工作或留学经验且法语达标的申请人的快速通道",
+    "eligibility": {
+      "min_clb": 5,
+      "min_education": "high_school",
+      "min_work_years_canadian": 1,
+      "min_work_years_foreign": 0,
+      "min_noc_teer": 4,
+      "min_settlement_funds": 0,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Oral French level 7 (échelle québécoise) — approximately TEF B2/CLB 7",
+        "One of: (a) 12+ months full-time Quebec work experience in last 24 months, or (b) Quebec diploma (DEC, DEP, bachelor, master, PhD)",
+        "Quebec values test (attestation de valeurs démocratiques)",
+        "Must intend to settle in Quebec"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 6,
+        "max": 12
+      },
+      "application_fee_cad": 827,
+      "additional_costs": [
+        {
+          "item": "Federal PR application",
+          "cost_cad": 1365
+        },
+        {
+          "item": "French test (TEF/TCF)",
+          "cost_cad": 400
+        }
+      ],
+      "total_estimated_cost_cad": 2592
+    },
+    "metrics": {
+      "success_rate_estimate": 85,
+      "annual_quota": 9000,
+      "competition_level": "medium"
+    },
+    "source": "provincial_official",
+    "last_verified": "2026-03-01",
+    "url": "https://www.quebec.ca/en/immigration/permanent/skilled-workers/quebec-experience-program"
+  },
+  "qc_entrepreneur": {
+    "id": "qc_entrepreneur",
+    "name": "Quebec Entrepreneur Program",
+    "name_zh": "魁北克企业家移民",
+    "category": "quebec",
+    "stream": "Entrepreneur Stream 1 — Innovative Project",
+    "province": "Quebec",
+    "description": "For entrepreneurs creating or acquiring an innovative business in Quebec with support from an accelerator/incubator",
+    "description_zh": "面向在魁北克创建或收购创新企业的企业家，需获得加速器或孵化器支持",
+    "eligibility": {
+      "min_clb": 5,
+      "min_education": "high_school",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 0,
+      "min_noc_teer": 5,
+      "min_settlement_funds": 0,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Oral French level 7 (échelle québécoise)",
+        "Service agreement with accelerator, incubator, or university entrepreneurship centre",
+        "Business plan for innovative project in Quebec",
+        "Net assets of at least $300,000 CAD (Stream 2) or support letter (Stream 1)"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 12,
+        "max": 24
+      },
+      "application_fee_cad": 1174,
+      "additional_costs": [
+        {
+          "item": "Business plan development",
+          "cost_cad": 5000
+        },
+        {
+          "item": "Federal PR application",
+          "cost_cad": 1365
+        }
+      ],
+      "total_estimated_cost_cad": 7539
+    },
+    "metrics": {
+      "success_rate_estimate": 55,
+      "annual_quota": 1500,
+      "competition_level": "medium"
+    },
+    "source": "provincial_official",
+    "last_verified": "2026-03-01",
+    "url": "https://www.quebec.ca/en/immigration/permanent/immigrate-business/entrepreneurs"
+  },
+  "qc_self_employed": {
+    "id": "qc_self_employed",
+    "name": "Quebec Self-Employed Worker Program",
+    "name_zh": "魁北克自雇移民",
+    "category": "quebec",
+    "stream": "Self-Employed Worker",
+    "province": "Quebec",
+    "description": "For self-employed workers who can create their own employment in Quebec",
+    "description_zh": "面向能在魁北克自创就业的自雇人士",
+    "eligibility": {
+      "min_clb": 5,
+      "min_education": "high_school",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 2,
+      "min_noc_teer": 5,
+      "min_settlement_funds": 100000,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Oral French level 7 (échelle québécoise)",
+        "Net assets of at least $100,000 CAD",
+        "2+ years self-employment experience in intended profession",
+        "Viable business plan demonstrating ability to be self-employed in Quebec"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 12,
+        "max": 20
+      },
+      "application_fee_cad": 1174,
+      "additional_costs": [
+        {
+          "item": "Federal PR application",
+          "cost_cad": 1365
+        }
+      ],
+      "total_estimated_cost_cad": 2539
+    },
+    "metrics": {
+      "success_rate_estimate": 60,
+      "annual_quota": 500,
+      "competition_level": "low"
+    },
+    "source": "provincial_official",
+    "last_verified": "2026-03-01",
+    "url": "https://www.quebec.ca/en/immigration/permanent/immigrate-business/self-employed-workers"
+  }
+}

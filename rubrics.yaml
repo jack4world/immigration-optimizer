@@ -1,0 +1,152 @@
+dimensions:
+  success_probability:
+    weight: 0.30
+    description: "路径最终获得PR的综合成功率"
+    sub_dimensions:
+      crs_competitiveness:
+        description: "CRS分数相对于历史邀请分数线的竞争力（当前283分，远低于一般抽签线500+）"
+        anchors:
+          60: "仅依赖Express Entry一般抽签，CRS 283无法被邀请"
+          80: "通过PNP获得+600分或通过定向抽签（STEM类别）降低分数线要求"
+          90: "通过PNP+CRS提升双管齐下，总分远超任何可能的分数线"
+      program_eligibility:
+        description: "是否完全满足目标项目的所有资格要求"
+        anchors:
+          60: "缺少1-2项关键要求（如CLB不达标或工作年限不足）"
+          80: "满足所有要求，但语言CLB 7接近最低线"
+          90: "各项指标远超最低要求，语言达到CLB 9+"
+      historical_approval:
+        description: "目标项目的历史批准率和配额情况"
+        anchors:
+          60: "项目竞争极为激烈，年配额常年用尽"
+          80: "项目竞争适中，配额充足"
+          90: "项目竞争较低，批准率高"
+  timeline_efficiency:
+    weight: 0.25
+    description: "从现在到获得PR的总时间效率（申请人要求1年内）"
+    sub_dimensions:
+      total_duration:
+        description: "预计总耗时（含准备+申请+审批）"
+        anchors:
+          60: "总耗时超过2年，不满足申请人within_1_year的时间要求"
+          80: "总耗时12-18个月，基本满足时间要求"
+          90: "总耗时12个月以内，完全满足时间要求"
+      critical_path:
+        description: "关键路径上是否有不必要的串行等待"
+        anchors:
+          60: "语言考试、ECA、PNP申请全部串行，浪费6+个月"
+          80: "大部分可并行步骤已并行（如语言+ECA同时进行）"
+          90: "关键路径完全优化，所有可并行步骤已并行"
+  cost_efficiency:
+    weight: 0.15
+    description: "路径总成本相对于效果的性价比"
+    sub_dimensions:
+      total_cost:
+        description: "申请费+考试费+中介费+生活成本等总费用（安家资金$30,000 CAD）"
+        anchors:
+          60: "总费用超过$30,000 CAD，超出申请人预算"
+          80: "总费用在$10,000-20,000 CAD之间"
+          90: "总费用低于$10,000 CAD"
+      cost_risk_ratio:
+        description: "在成功率不确定时投入的资金风险"
+        anchors:
+          60: "大量前期投入，但项目成功率不到60%"
+          80: "投入合理，主路径成功率>75%"
+          90: "低前期投入且高确定性，或有退费机制"
+  quality_of_life:
+    weight: 0.15
+    description: "路径执行期间和定居后的生活质量（已婚有子女）"
+    sub_dimensions:
+      destination_match:
+        description: "最终定居地与申请人偏好的匹配度（Ontario/BC/Alberta）"
+        anchors:
+          60: "目标省份不在Ontario/BC/Alberta中"
+          80: "目标在偏好列表，但非首选（如Alberta而非Ontario）"
+          90: "完全匹配首选省份，且有好的中学教育资源（申请人为子女教育移民）"
+      career_continuity:
+        description: "40岁机械工程师移民过程中职业发展的连续性"
+        anchors:
+          60: "需要读college或从事非机械工程工作（违反anti_pattern）"
+          80: "短期过渡期后可在加拿大从事工程相关工作"
+          90: "全程可在机械工程领域工作，无职业中断"
+  plan_robustness:
+    weight: 0.15
+    description: "路径对政策变化和不确定性的韧性"
+    sub_dimensions:
+      backup_options:
+        description: "如果主路径受阻是否有备选方案"
+        anchors:
+          60: "单一路径（如仅依赖Ontario PNP），无任何备选"
+          80: "有1个可行备选方案（如主选Ontario PNP + 备选Alberta PNP）"
+          90: "有2+个备选方案，覆盖不同省份和项目类别，且切换成本低"
+      policy_sensitivity:
+        description: "路径对政策变动的敏感度"
+        anchors:
+          60: "严重依赖特定试点项目或定向抽签类别"
+          80: "依赖成熟稳定的PNP项目"
+          90: "基于多年不变的核心项目（Express Entry + 成熟PNP），抗政策风险"
+
+adversarial_penalties:
+  eligibility:
+    - rule: "路径包含申请人不满足资格要求的项目"
+      penalty: -15
+    - rule: "CLB分数不满足目标项目最低要求"
+      penalty: -20
+    - rule: "工作经验年限不满足目标项目要求"
+      penalty: -15
+  timeline:
+    - rule: "步骤之间有逻辑依赖但未按正确顺序排列"
+      penalty: -10
+    - rule: "证件/考试成绩在申请时已过期"
+      penalty: -20
+    - rule: "可并行的步骤被安排成串行且无理由"
+      penalty: -5
+  cost:
+    - rule: "遗漏必要费用（如体检、生物采集）"
+      penalty: -5
+    - rule: "费用估算与官方数据偏差>30%"
+      penalty: -8
+  feasibility:
+    - rule: "路径依赖不存在或已关闭的移民项目"
+      penalty: -25
+    - rule: "假设获得省提名但未说明具体途径"
+      penalty: -10
+    - rule: "路径与申请人明确的anti_patterns冲突（如要求读college或做非本专业工作）"
+      penalty: -15
+    - rule: "40岁大龄申请人依赖一般Express Entry抽签（CRS 283远低于500+分数线）"
+      penalty: -20
+  max_penalty_per_dimension: -25
+
+rewards:
+  eligibility:
+    - rule: "申请人各项指标远超目标项目最低要求"
+      reward: 5
+    - rule: "通过PNP+CRS提升使总分远超分数线"
+      reward: 8
+    - rule: "同时满足多个项目的资格要求，选择灵活"
+      reward: 5
+  timeline:
+    - rule: "所有可并行步骤已实现并行"
+      reward: 5
+    - rule: "总路径时长在12个月以内"
+      reward: 8
+    - rule: "关键路径上无不必要的等待"
+      reward: 3
+  cost:
+    - rule: "总费用低于$10,000 CAD"
+      reward: 5
+    - rule: "高投入步骤对应高确定性回报"
+      reward: 3
+  robustness:
+    - rule: "有2个以上可行备选路径且切换成本低"
+      reward: 5
+    - rule: "主路径使用成熟稳定的移民项目（非试点）"
+      reward: 3
+  quality:
+    - rule: "目标省份完全匹配申请人首选且有优质中学教育"
+      reward: 3
+    - rule: "移民过程中无需中断机械工程职业发展"
+      reward: 5
+    - rule: "路径考虑了配偶和子女教育需求"
+      reward: 3
+  max_reward_per_dimension: 15
