@@ -3,27 +3,13 @@ import path from 'path';
 import { getGlobalDir } from './paths.js';
 
 export interface Profile {
-  loyalty_program: string;
-  dietary: string[];
-  stated_vibes: string[];
-  learned_vibes: string[];
-  anti_patterns: string[];
-  anti_patterns_learned: string[];
-  source_trust: Record<string, number>;
-  trips_completed: number;
-  last_debrief: string;
+  completed_cases: number;
+  last_updated: string;
 }
 
 const DEFAULT_PROFILE: Profile = {
-  loyalty_program: '',
-  dietary: [],
-  stated_vibes: [],
-  learned_vibes: [],
-  anti_patterns: [],
-  anti_patterns_learned: [],
-  source_trust: {},
-  trips_completed: 0,
-  last_debrief: '',
+  completed_cases: 0,
+  last_updated: '',
 };
 
 export function loadProfile(dir?: string): Profile {

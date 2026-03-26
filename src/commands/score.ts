@@ -5,47 +5,46 @@ import yaml from 'js-yaml';
 import { loadConfig } from '../data/config.js';
 import { createProvider } from '../llm/factory.js';
 import { Scorer } from '../scoring/scorer.js';
-import type { Rubrics, TripConstraints, ActivitiesDB } from '../data/schemas.js';
+import { calculateCRS } from '../crs/calculator.js';
+import type { Rubrics, ApplicantProfile, ProgramsDB } from '../data/schemas.js';
 
 export async function scoreCommand(): Promise<void> {
   const cwd = process.cwd();
 
-  // Verify we're in a trip project
-  const constraintsPath = path.join(cwd, 'constraints.yaml');
-  if (!fs.existsSync(constraintsPath)) {
-    console.log(chalk.red('\n  Not in a trip project directory (no constraints.yaml found).\n'));
+  if (!fs.existsSync(path.join(cwd, 'profile.yaml'))) {
+    console.log(chalk.red('\n  Not in an immigration project directory (no profile.yaml found).\n'));
     process.exit(1);
   }
 
   const config = loadConfig();
 
-  // Load trip files
-  const constraints = yaml.load(fs.readFileSync(constraintsPath, 'utf-8')) as TripConstraints;
+  const profile = yaml.load(fs.readFileSync(path.join(cwd, 'profile.yaml'), 'utf-8')) as ApplicantProfile;
   const rubrics = yaml.load(fs.readFileSync(path.join(cwd, 'rubrics.yaml'), 'utf-8')) as Rubrics;
-  const planContent = fs.readFileSync(path.join(cwd, 'plan.md'), 'utf-8');
+  const pathwayContent = fs.readFileSync(path.join(cwd, 'pathway.md'), 'utf-8');
 
-  let activitiesDb: ActivitiesDB = {};
-  const dbPath = path.join(cwd, 'activities_db.json');
+  let programsDb: ProgramsDB = {};
+  const dbPath = path.join(cwd, 'programs_db.json');
   if (fs.existsSync(dbPath)) {
-    activitiesDb = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+    programsDb = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
   }
 
-  console.log(chalk.bold(`\n  Scoring ${constraints.trip?.name || 'trip'} (absolute mode)...\n`));
+  const crs = calculateCRS(profile);
+  console.log(chalk.bold(`\n  Scoring pathway (absolute mode)...`));
+  console.log(`  CRS Estimate: ${crs.total}\n`);
 
   const provider = createProvider(config);
   const scorer = new Scorer(provider);
-  const result = await scorer.scoreAbsolute(planContent, activitiesDb, constraints, rubrics);
+  const result = await scorer.scoreAbsolute(pathwayContent, programsDb, profile, rubrics, crs);
 
-  // Write score.json
   fs.writeFileSync(path.join(cwd, 'score.json'), JSON.stringify(result, null, 2));
 
-  // Print results
   console.log(chalk.bold(`\n  Composite Score: ${result.composite_score.toFixed(2)}/100\n`));
 
   console.log(chalk.bold('  Dimension Scores:'));
   for (const [dim, data] of Object.entries(result.components)) {
     const extras: string[] = [];
     if (data.penalty) extras.push(`penalty: ${data.penalty}`);
+    if (data.reward) extras.push(chalk.green(`reward: +${data.reward}`));
     if (data.holistic_adjustment) extras.push(`holistic: ${data.holistic_adjustment > 0 ? '+' : ''}${data.holistic_adjustment}`);
     const extraStr = extras.length > 0 ? chalk.dim(` (${extras.join(', ')})`) : '';
     console.log(`    ${dim}: ${data.score.toFixed(1)} ${chalk.dim(`(w=${data.weight})`)}${extraStr}`);
@@ -58,7 +57,14 @@ export async function scoreCommand(): Promise<void> {
   if (result.penalties.length > 0) {
     console.log(chalk.bold(`\n  Adversarial Penalties (${result.penalties.length}):`));
     for (const p of result.penalties) {
-      console.log(`    Day ${p.day}: ${p.issue} ${chalk.red(`(${p.penalty})`)}`);
+      console.log(`    Step ${p.step}: ${p.issue} ${chalk.red(`(${p.penalty})`)}`);
+    }
+  }
+
+  if (result.rewards.length > 0) {
+    console.log(chalk.bold.green(`\n  Rewards (${result.rewards.length}):`));
+    for (const r of result.rewards) {
+      console.log(`    Step ${r.step}: ${r.reason} ${chalk.green(`(+${r.reward})`)}`);
     }
   }
 

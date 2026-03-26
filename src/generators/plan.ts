@@ -1,72 +1,96 @@
 import type { LLMProvider } from '../llm/provider.js';
-import type { TripConstraints } from '../data/schemas.js';
+import type { ApplicantProfile, CRSBreakdown, ProgramsDB } from '../data/schemas.js';
 import { getLlmLanguageInstruction } from '../i18n.js';
 
-export async function generatePlan(
+export async function generatePathway(
   provider: LLMProvider,
-  constraints: TripConstraints,
+  profile: ApplicantProfile,
+  crs: CRSBreakdown,
+  programsDb: ProgramsDB,
 ): Promise<string> {
   const langInstruction = getLlmLanguageInstruction();
 
-  const prompt = `Generate a detailed day-by-day travel itinerary for this trip.
+  const programsList = Object.values(programsDb)
+    .map(p => `- ${p.name} (${p.name_zh}): ${p.description_zh || p.description}`)
+    .join('\n');
 
-## Trip Details
-Name: ${constraints.trip.name}
-Dates: ${constraints.trip.start_date} to ${constraints.trip.end_date} (${constraints.trip.total_days} days)
-Travelers: ${constraints.trip.travelers}
-Origin: ${constraints.trip.origin}
-Cities (in order): ${constraints.cities.map(c => `${c.name} (${c.role === 'transit' ? 'TRANSIT ONLY — no sightseeing, just logistics' : `${c.min_days}-${c.max_days} days`})`).join(' → ')}
-Budget: ${constraints.budget.currency} ${constraints.budget.total} total
-Preferences: ${constraints.preferences.priority_order.join(', ')}
-Anti-patterns to avoid: ${constraints.preferences.anti_patterns.join(', ')}
-Dietary: ${constraints.dietary.length > 0 ? constraints.dietary.join(', ') : 'none'}
-Hotel loyalty: ${constraints.loyalty_program || 'none'}
-${constraints.must_visit?.length > 0 ? `Must-visit: ${constraints.must_visit.join(', ')}` : ''}
-${constraints.hard_constraints?.length > 0 ? `Constraints: ${constraints.hard_constraints.join('. ')}` : ''}
-${constraints.user_notes ? `Travel style notes: ${constraints.user_notes}` : ''}
+  const prompt = `Generate a detailed, step-by-step immigration pathway to Canadian Permanent Residency for this applicant.
+
+## Applicant Profile
+- Name: ${profile.personal.name}
+- Nationality: ${profile.personal.nationality}
+- Age: ${profile.personal.age}
+- Marital status: ${profile.personal.marital_status}
+- Education: ${profile.education.highest_degree} in ${profile.education.field_of_study} (${profile.education.institution}, ${profile.education.country}, ${profile.education.year_completed})
+- ECA completed: ${profile.education.eca_completed ? 'Yes' : 'No'}
+- English: ${profile.language.english ? `CLB R${profile.language.english.reading}/W${profile.language.english.writing}/L${profile.language.english.listening}/S${profile.language.english.speaking}` : 'None'}
+- French: ${profile.language.french ? `CLB R${profile.language.french.reading}/W${profile.language.french.writing}/L${profile.language.french.listening}/S${profile.language.french.speaking}` : 'None'}
+- Current occupation: ${profile.work_experience.current_occupation} (NOC ${profile.work_experience.noc_code}, TEER ${profile.work_experience.teer_category})
+- Foreign work: ${profile.work_experience.total_years_foreign} years
+- Canadian work: ${profile.work_experience.total_years_canadian} years
+- Settlement funds: $${profile.finances.settlement_funds_cad} CAD
+- Job offer in Canada: ${profile.canadian_ties.has_job_offer ? 'Yes' : 'No'}
+- Relatives in Canada: ${profile.canadian_ties.relatives_in_canada ? 'Yes' : 'No'}
+
+## CRS Score Breakdown
+- Total: ${crs.total}
+- Age: ${crs.details.age}, Education: ${crs.details.education}, Language: ${crs.details.first_language}
+- Canadian experience: ${crs.details.canadian_experience}, Skill transfer: ${crs.skill_transferability}
+- Additional: ${crs.additional_points}
+
+## Available Immigration Programs
+${programsList}
+
+## Applicant Preferences
+- Target provinces: ${profile.preferences.target_provinces.join(', ')}
+- Timeline: ${profile.preferences.timeline_urgency}
+- Risk tolerance: ${profile.preferences.risk_tolerance}
+- Willing to study: ${profile.preferences.willing_to_study ? 'Yes' : 'No'}
+- Willing to relocate province: ${profile.preferences.willing_to_relocate_province ? 'Yes' : 'No'}
+- Things to avoid: ${profile.preferences.anti_patterns.join(', ') || 'none'}
 
 ## Requirements
-- Start with YAML frontmatter containing trip metadata
-- IMMEDIATELY after the frontmatter, include a **Summary Table** (see format below)
-- Then each day should have: morning activity, lunch, afternoon activity, dinner, evening
-- Include specific restaurant recommendations (not generic "local restaurant")
-- Include transit details between cities (transport mode, approximate time)
-- Include hotel recommendations
-- Leave some unstructured time for wandering
-- Be realistic about pacing — travel days should be light on activities
+Generate a complete pathway.md with:
 
-## Format
+1. YAML frontmatter:
 ---
-trip_name: "${constraints.trip.name}"
-total_days: ${constraints.trip.total_days}
-start_date: ${constraints.trip.start_date}
-end_date: ${constraints.trip.end_date}
+applicant: "${profile.personal.name}"
+target: "Canadian Permanent Residency"
+primary_program: "<best fit program>"
+crs_estimate: ${crs.total}
+total_duration_months: <estimated>
+total_cost_cad: <estimated>
+generated_at: "${new Date().toISOString().split('T')[0]}"
 ---
 
-## Schedule Overview
+2. Summary table of all steps:
+| Step | Action | Timeline | Cost (CAD) | Status | Parallel |
+|------|--------|----------|------------|--------|----------|
 
-| Day | Date | DoW | Location | Hotel | Flight/Train | Notes |
-|-----|------|-----|----------|-------|--------------|-------|
-| 1 | May 28 | Thu | NRT → Shanghai | — | NH919 14:00 | Arrive, evening flight |
-| 2 | May 29 | Fri | Shanghai | Le Méridien | — | Full day |
-| ... | ... | ... | ... | ... | ... | ... |
+3. Detailed section for each step including:
+- Goal and rationale
+- Current status (what the applicant already has)
+- CRS impact (if applicable)
+- Timeline with specific months
+- Cost breakdown
+- Risks and mitigation strategies
+- Prerequisites
 
-# Day 1: [City] — [Theme]
-## Morning
-...
-## Lunch
-...
-## Afternoon
-...
-## Dinner
-...
-## Evening
-...
+4. Backup pathways (Plan B, Plan C) with:
+- When to trigger the backup
+- Additional time and cost
+- Trade-offs
 
-**Hotel:** [Name]
-**Transit:** [if applicable]
+5. Risk assessment table:
+| Risk | Probability | Impact | Mitigation |
 
-Generate the complete itinerary now. The summary table must cover ALL ${constraints.trip.total_days} days with correct dates and days of week starting from ${constraints.trip.start_date}.${langInstruction}`;
+IMPORTANT:
+- Be specific about timelines (use actual month estimates based on current date)
+- Include ALL costs (application fees, biometrics, medical, police certificates, etc.)
+- Identify which steps can run in parallel
+- Consider the applicant's CRS score vs recent draw cutoffs
+- If CRS is below typical cutoffs, recommend PNP or credential improvement steps
+- Include realistic processing time estimates${langInstruction}`;
 
   return await provider.complete(prompt, 32000);
 }

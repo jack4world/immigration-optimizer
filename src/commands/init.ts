@@ -1,325 +1,240 @@
-import { input, select, checkbox } from '@inquirer/prompts';
+import { input, select, checkbox, confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
 import ora from 'ora';
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 import { loadConfig, saveConfig } from '../data/config.js';
-import { loadProfile, saveProfile, type Profile } from '../data/profile.js';
-import { getLearnedPath } from '../data/paths.js';
-import { scaffoldTrip } from '../data/trip.js';
+import { scaffoldPathway } from '../data/pathway.js';
+import { SEED_PROGRAMS } from '../data/seed-programs.js';
 import { createProvider } from '../llm/factory.js';
-import { generateConstraints, type InitAnswers } from '../generators/constraints.js';
+import { generateProfileYaml, type InitAnswers } from '../generators/constraints.js';
 import { generateRubrics } from '../generators/rubrics.js';
-import { generatePlan } from '../generators/plan.js';
+import { generatePathway } from '../generators/plan.js';
 import { generateProgram } from '../generators/program.js';
-import type { TripConstraints } from '../data/schemas.js';
-import { t, setLanguage, getLanguage, getLlmLanguageInstruction, type Language } from '../i18n.js';
+import { calculateCRS, ieltsToClb } from '../crs/calculator.js';
+import { parseProfileYaml } from '../generators/constraints.js';
+import { t, setLanguage, getLlmLanguageInstruction, type Language } from '../i18n.js';
 import { parseJsonResponse } from '../llm/json-parser.js';
-import type { InitAnswers } from '../generators/constraints.js';
+import type { ApplicantProfile } from '../data/schemas.js';
 
-function buildInterviewPrompt(answers: InitAnswers): string {
+function buildInterviewPrompt(profile: ApplicantProfile): string {
   const langInstruction = getLlmLanguageInstruction();
-  const citiesList = answers.cities.map(c =>
-    `${c.name} (${c.role === 'transit' ? 'transit only' : 'destination'})`
-  ).join(', ');
-
-  return `You are a travel planning assistant conducting a brief interview.
-Based on the trip details below, generate 3-5 follow-up questions
-to understand this traveler's preferences better.
+  return `You are a Canadian immigration consultant conducting a brief interview.
+Based on the applicant's profile below, generate 3-5 follow-up questions
+to understand their situation and goals better.
 
 Ask about things the structured data DOESN'T capture:
-- Pace and energy level (packed days vs lazy mornings?)
-- Food specifics (street food vs fine dining? adventurous eater?)
-- Travel style (plan every minute vs leave room for spontaneity?)
-- Group dynamics (different interests among travelers?)
-- Specific experiences they're dreaming of
-- Things that would ruin the trip
+- Specific reasons for choosing Canada (family reunion? career? education?)
+- Flexibility on destination city/province
+- Career goals after landing
+- Family situation details (spouse skills, children's education needs)
+- Any pending applications or previous immigration attempts
+- Connections in Canada (friends, former colleagues, community)
 
-Do NOT ask about things already answered (dates, cities, budget, must-visit, constraints).
+Do NOT ask about things already answered.
 Do NOT ask more than 5 questions.
-Each question should be 1 sentence, conversational tone.
 
-## Trip Details
-Name: ${answers.name}
-Dates: ${answers.start_date} to ${answers.end_date}
-Travelers: ${answers.travelers}
-Origin: ${answers.origin}
-Cities: ${citiesList}
-Budget: ${answers.budget_currency} ${answers.budget_total}
-Vibes: ${answers.vibes.join(', ')}
-Anti-patterns: ${answers.anti_patterns.join(', ') || 'none'}
-Must-visit: ${answers.must_visit.join(', ') || 'none'}
-Constraints: ${answers.hard_constraints.join('. ') || 'none'}
-Dietary: ${answers.dietary.join(', ') || 'none'}
+## Applicant Profile
+Name: ${profile.personal.name}
+Age: ${profile.personal.age}, ${profile.personal.nationality}
+Education: ${profile.education.highest_degree} in ${profile.education.field_of_study}
+Occupation: ${profile.work_experience.current_occupation}
+Target: ${profile.preferences.target_provinces.join(', ')}
+Timeline: ${profile.preferences.timeline_urgency}
 
-Return a JSON array of question strings, nothing else:
+Return a JSON array of question strings:
 ["question 1", "question 2", ...]${langInstruction}`;
 }
 
-function loadExisting(name: string): TripConstraints | null {
-  const tripDirName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const constraintsPath = path.resolve(tripDirName, 'constraints.yaml');
-  if (!fs.existsSync(constraintsPath)) return null;
-  try {
-    return yaml.load(fs.readFileSync(constraintsPath, 'utf-8')) as TripConstraints;
-  } catch {
-    return null;
-  }
-}
-
-function vibeChoices() {
-  return [
-    { value: 'wandering', name: t('vibe.wandering') },
-    { value: 'food', name: t('vibe.food') },
-    { value: 'culture', name: t('vibe.culture') },
-    { value: 'nature', name: t('vibe.nature') },
-    { value: 'adventure', name: t('vibe.adventure') },
-    { value: 'relaxation', name: t('vibe.relaxation') },
-    { value: 'nightlife', name: t('vibe.nightlife') },
-    { value: 'history', name: t('vibe.history') },
-    { value: 'shopping', name: t('vibe.shopping') },
-    { value: 'family', name: t('vibe.family') },
-    { value: 'romantic', name: t('vibe.romantic') },
-  ];
-}
-
-async function collectAnswers(name: string, profile: Profile): Promise<InitAnswers> {
-  const startDate = await input({ message: t('trip.start_date') });
-  const endDate = await input({ message: t('trip.end_date') });
-  const travelers = await input({ message: t('trip.travelers'), default: '2' });
-  const origin = await input({ message: t('trip.origin'), default: 'Atlanta' });
-
-  const citiesRaw = await input({
-    message: t('trip.cities'),
-    validate: (v) => v.includes(',') || v.length > 0 || t('trip.cities_validate'),
-  });
-
-  let cities = citiesRaw.split(',').map(c => {
-    const trimmed = c.trim();
-    const key = trimmed.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    return { name: trimmed, key, role: 'destination' as const };
-  });
-
-  if (cities.length > 1) {
-    const transitCities = await checkbox({
-      message: t('trip.transit_cities'),
-      choices: cities.map(c => ({ value: c.key, name: c.name })),
-    });
-    cities = cities.map(c => ({
-      ...c,
-      role: transitCities.includes(c.key) ? 'transit' as const : 'destination' as const,
-    }));
-  }
-
-  // Route style — deep dive vs wide coverage
-  const routeStyle = await select({
-    message: t('trip.route_style') || 'Trip style: cover more ground or deep dive in fewer places?',
+async function collectAnswers(name: string): Promise<InitAnswers> {
+  const personalName = await input({ message: t('profile.name') });
+  const nationality = await input({ message: t('profile.nationality'), default: 'Chinese' });
+  const age = await input({ message: t('profile.age') });
+  const dob = await input({ message: t('profile.dob') });
+  const marital = await select({
+    message: t('profile.marital'),
     choices: [
-      { value: 'deep', name: t('trip.route_deep') || 'Deep dive — fewer places, more time each' },
-      { value: 'wide', name: t('trip.route_wide') || 'Wide coverage — see more places, move faster' },
-      { value: 'balanced', name: t('trip.route_balanced') || 'Balanced — mix of both' },
+      { value: 'single', name: 'Single / 单身' },
+      { value: 'married', name: 'Married / 已婚' },
+      { value: 'common_law', name: 'Common-law / 同居伴侣' },
+    ],
+  });
+  const hasChildren = await confirm({ message: t('profile.children'), default: false });
+
+  const degree = await select({
+    message: t('edu.degree'),
+    choices: [
+      { value: 'high_school', name: 'High school / 高中' },
+      { value: 'one_year_diploma', name: '1-year diploma / 一年制大专' },
+      { value: 'two_year_diploma', name: '2-year diploma / 两年制大专' },
+      { value: 'bachelors', name: 'Bachelor\'s / 本科' },
+      { value: 'two_or_more_credentials', name: '2+ credentials / 双学历' },
+      { value: 'masters', name: 'Master\'s / 硕士' },
+      { value: 'phd', name: 'PhD / 博士' },
+    ],
+  });
+  const field = await input({ message: t('edu.field') });
+  const institution = await input({ message: t('edu.institution') });
+  const eduCountry = await input({ message: t('edu.country'), default: 'China' });
+  const yearCompleted = await input({ message: t('edu.year') });
+  const ecaCompleted = await confirm({ message: t('edu.eca'), default: false });
+
+  const testType = await select({
+    message: t('lang.test_type'),
+    choices: [
+      { value: 'IELTS', name: 'IELTS' },
+      { value: 'CELPIP', name: 'CELPIP' },
+      { value: 'none', name: 'None / 无' },
     ],
   });
 
-  const budgetTotal = await input({ message: t('trip.budget'), default: '5000' });
+  let engReading = 0, engWriting = 0, engListening = 0, engSpeaking = 0;
+  if (testType !== 'none') {
+    const r = await input({ message: `${testType} ${t('lang.reading')}` });
+    const w = await input({ message: `${testType} ${t('lang.writing')}` });
+    const l = await input({ message: `${testType} ${t('lang.listening')}` });
+    const s = await input({ message: `${testType} ${t('lang.speaking')}` });
 
-  const vibes = await checkbox({
-    message: t('trip.vibes'),
-    choices: vibeChoices(),
-  });
-
-  const antiPatternsRaw = await input({
-    message: t('trip.anti_patterns'),
-    default: profile.anti_patterns_learned.length > 0 ? profile.anti_patterns_learned.join(', ') : '',
-  });
-
-  const antiPatterns = antiPatternsRaw
-    ? antiPatternsRaw.split(',').map(s => s.trim()).filter(Boolean)
-    : [];
-
-  // === Step A: Must-visit and hard constraints (free text) ===
-  const mustVisitRaw = await input({ message: t('trip.must_visit') });
-  const mustVisit = mustVisitRaw
-    ? mustVisitRaw.split(',').map(s => s.trim()).filter(Boolean)
-    : [];
-
-  const hardConstraintsRaw = await input({ message: t('trip.hard_constraints') });
-  const hardConstraints = hardConstraintsRaw
-    ? hardConstraintsRaw.split(/[.;\n]/).map(s => s.trim()).filter(Boolean)
-    : [];
-
-  return {
-    name,
-    start_date: startDate,
-    end_date: endDate,
-    travelers: parseInt(travelers, 10),
-    origin,
-    cities,
-    budget_total: parseInt(budgetTotal, 10),
-    budget_currency: 'USD',
-    vibes,
-    anti_patterns: antiPatterns,
-    must_visit: mustVisit,
-    hard_constraints: hardConstraints,
-    route_style: routeStyle as 'deep' | 'wide' | 'balanced',
-    user_notes: '',  // filled in by LLM interview in initCommand
-    dietary: profile.dietary,
-    loyalty_program: profile.loyalty_program,
-  };
-}
-
-async function editAnswers(name: string, existing: TripConstraints, profile: Profile): Promise<InitAnswers> {
-  // Show current settings
-  console.log(chalk.bold(`  ${t('edit.current_settings')}\n`));
-  console.log(`    ${chalk.dim('1.')} ${t('field.dates')}:          ${chalk.white(`${existing.trip.start_date} → ${existing.trip.end_date}`)}`);
-  console.log(`    ${chalk.dim('2.')} ${t('field.travelers')}:      ${chalk.white(String(existing.trip.travelers))}`);
-  console.log(`    ${chalk.dim('3.')} ${t('field.origin')}:         ${chalk.white(existing.trip.origin)}`);
-  console.log(`    ${chalk.dim('4.')} ${t('field.cities')}:         ${chalk.white(existing.cities.map(c => c.name).join(', '))}`);
-  console.log(`    ${chalk.dim('5.')} ${t('field.budget')}:         ${chalk.white(`${existing.budget?.currency || 'USD'} ${existing.budget?.total || 5000}`)}`);
-  console.log(`    ${chalk.dim('6.')} ${t('field.vibes')}:          ${chalk.white(existing.preferences.priority_order.join(', '))}`);
-  console.log(`    ${chalk.dim('7.')} ${t('field.anti_patterns')}:  ${chalk.white(existing.preferences.anti_patterns.join(', ') || 'none')}`);
-  console.log();
-
-  const editChoice = await select({
-    message: t('edit.what_to_do'),
-    choices: [
-      { value: 'regenerate', name: t('edit.regenerate') },
-      { value: 'edit', name: t('edit.edit_fields') },
-      { value: 'restart', name: t('edit.restart') },
-    ],
-  });
-
-  if (editChoice === 'restart') {
-    return collectAnswers(name, profile);
-  }
-
-  // Start from existing values
-  let startDate = existing.trip.start_date;
-  let endDate = existing.trip.end_date;
-  let travelers = existing.trip.travelers;
-  let origin = existing.trip.origin;
-  let cities = existing.cities.map(c => ({ name: c.name, key: c.key, role: (c.role || 'destination') as 'destination' | 'transit' }));
-  let budgetTotal = existing.budget?.total || 5000;
-  let vibes = existing.preferences.priority_order;
-  let antiPatterns = existing.preferences.anti_patterns;
-
-  if (editChoice === 'edit') {
-    const fieldsToEdit = await checkbox({
-      message: t('edit.which_fields'),
-      choices: [
-        { value: 'dates', name: `${t('field.dates')} (${startDate} → ${endDate})` },
-        { value: 'travelers', name: `${t('field.travelers')} (${travelers})` },
-        { value: 'origin', name: `${t('field.origin')} (${origin})` },
-        { value: 'cities', name: `${t('field.cities')} (${cities.map(c => c.name).join(', ')})` },
-        { value: 'budget', name: `${t('field.budget')} (${budgetTotal})` },
-        { value: 'vibes', name: `${t('field.vibes')} (${vibes.join(', ')})` },
-        { value: 'anti_patterns', name: `${t('field.anti_patterns')} (${antiPatterns.join(', ') || 'none'})` },
-      ],
-    });
-
-    if (fieldsToEdit.includes('dates')) {
-      startDate = await input({ message: t('trip.start_date'), default: startDate });
-      endDate = await input({ message: t('trip.end_date'), default: endDate });
-    }
-    if (fieldsToEdit.includes('travelers')) {
-      const val = await input({ message: t('trip.travelers'), default: String(travelers) });
-      travelers = parseInt(val, 10);
-    }
-    if (fieldsToEdit.includes('origin')) {
-      origin = await input({ message: t('trip.origin'), default: origin });
-    }
-    if (fieldsToEdit.includes('cities')) {
-      const citiesRaw = await input({
-        message: t('trip.cities'),
-        default: cities.map(c => c.name).join(', '),
-      });
-      cities = citiesRaw.split(',').map(c => {
-        const trimmed = c.trim();
-        const key = trimmed.toLowerCase().replace(/[^a-z0-9]/g, '_');
-        return { name: trimmed, key, role: 'destination' as const };
-      });
-      if (cities.length > 1) {
-        const transitCities = await checkbox({
-          message: t('trip.transit_cities'),
-          choices: cities.map(c => ({ value: c.key, name: c.name })),
-        });
-        cities = cities.map(c => ({
-          ...c,
-          role: transitCities.includes(c.key) ? 'transit' as const : 'destination' as const,
-        }));
-      }
-    }
-    if (fieldsToEdit.includes('budget')) {
-      const val = await input({ message: t('trip.budget'), default: String(budgetTotal) });
-      budgetTotal = parseInt(val, 10);
-    }
-    if (fieldsToEdit.includes('vibes')) {
-      vibes = await checkbox({
-        message: t('trip.vibes'),
-        choices: vibeChoices().map(c => ({ ...c, checked: vibes.includes(c.value) })),
-      });
-    }
-    if (fieldsToEdit.includes('anti_patterns')) {
-      const raw = await input({
-        message: t('trip.anti_patterns'),
-        default: antiPatterns.join(', '),
-      });
-      antiPatterns = raw ? raw.split(',').map(s => s.trim()).filter(Boolean) : [];
-    }
-  }
-
-  return {
-    name,
-    start_date: startDate,
-    end_date: endDate,
-    travelers,
-    origin,
-    cities,
-    budget_total: budgetTotal,
-    budget_currency: 'USD',
-    vibes,
-    anti_patterns: antiPatterns,
-    must_visit: existing.must_visit || [],
-    hard_constraints: existing.hard_constraints || [],
-    user_notes: existing.user_notes || '',
-    dietary: profile.dietary,
-    loyalty_program: profile.loyalty_program,
-  };
-}
-
-function printProviderErrorHint(cfg: ReturnType<typeof loadConfig>, msg: string): void {
-  if (cfg.model_override) {
-    const mo = cfg.model_override;
-    if (msg.includes('401') || msg.includes('403') || msg.includes('Authentication') || msg.includes('Unauthorized')) {
-      console.log(chalk.yellow(`  API key for ${mo.model} is invalid or expired.`));
-      console.log(chalk.yellow(`  Run: trip-optimizer config set model_override.api_key <new-key>`));
-      console.log(chalk.yellow(`  Or re-run: trip-optimizer init "${cfg.model_override.model}" to reconfigure.`));
-    } else if (msg.includes('404') || msg.includes('NOT_FOUND')) {
-      console.log(chalk.yellow(`  Model "${mo.model}" not found at ${mo.base_url}`));
-    }
-  } else if (msg.includes('401') || msg.includes('403') || msg.includes('PERMISSION')) {
-    if (process.env.CLAUDE_CODE_USE_VERTEX === '1' || process.env.GOOGLE_CLOUD_PROJECT) {
-      console.log(chalk.yellow(`  ${t('error.auth_check')}`));
+    if (testType === 'IELTS') {
+      engReading = ieltsToClb(parseFloat(r));
+      engWriting = ieltsToClb(parseFloat(w));
+      engListening = ieltsToClb(parseFloat(l));
+      engSpeaking = ieltsToClb(parseFloat(s));
     } else {
-      console.log(chalk.yellow('  Anthropic API key is invalid. Run: trip-optimizer config set api_key <key>'));
+      engReading = parseInt(r, 10);
+      engWriting = parseInt(w, 10);
+      engListening = parseInt(l, 10);
+      engSpeaking = parseInt(s, 10);
     }
-  } else if (msg.includes('404') || msg.includes('NOT_FOUND')) {
-    console.log(chalk.yellow(`  ${t('error.model_check')}: ANTHROPIC_MODEL=${process.env.ANTHROPIC_MODEL || '(not set)'}`));
   }
+
+  const hasFrench = await confirm({ message: t('lang.has_french'), default: false });
+  let frReading = 0, frWriting = 0, frListening = 0, frSpeaking = 0;
+  if (hasFrench) {
+    frReading = parseInt(await input({ message: 'French Reading (CLB):' }), 10);
+    frWriting = parseInt(await input({ message: 'French Writing (CLB):' }), 10);
+    frListening = parseInt(await input({ message: 'French Listening (CLB):' }), 10);
+    frSpeaking = parseInt(await input({ message: 'French Speaking (CLB):' }), 10);
+  }
+
+  const occupation = await input({ message: t('work.occupation') });
+  const noc = await input({ message: t('work.noc') });
+  const teer = await select({
+    message: t('work.teer'),
+    choices: [
+      { value: 0, name: 'TEER 0 (Management / 管理)' },
+      { value: 1, name: 'TEER 1 (Professional / 专业)' },
+      { value: 2, name: 'TEER 2 (Technical / 技术)' },
+      { value: 3, name: 'TEER 3 (Intermediate / 中级)' },
+      { value: 4, name: 'TEER 4 (Labour / 劳动)' },
+    ],
+  });
+  const foreignYears = await input({ message: t('work.foreign_years'), default: '0' });
+  const canadianYears = await input({ message: t('work.canadian_years'), default: '0' });
+
+  const settlement = await input({ message: t('fin.settlement'), default: '20000' });
+  const willInvest = await confirm({ message: t('fin.invest'), default: false });
+
+  const hasOffer = await confirm({ message: t('ties.job_offer'), default: false });
+  const hasRelatives = await confirm({ message: t('ties.relatives'), default: false });
+  const prevStudy = await confirm({ message: t('ties.prev_study'), default: false });
+  const prevWork = await confirm({ message: t('ties.prev_work'), default: false });
+
+  const provinces = await checkbox({
+    message: t('pref.provinces'),
+    choices: [
+      { value: 'Ontario', name: 'Ontario / 安大略' },
+      { value: 'British Columbia', name: 'British Columbia / 不列颠哥伦比亚' },
+      { value: 'Alberta', name: 'Alberta / 阿尔伯塔' },
+      { value: 'Quebec', name: 'Quebec / 魁北克' },
+      { value: 'Manitoba', name: 'Manitoba / 曼尼托巴' },
+      { value: 'Saskatchewan', name: 'Saskatchewan / 萨斯喀彻温' },
+      { value: 'Nova Scotia', name: 'Nova Scotia / 新斯科舍' },
+      { value: 'New Brunswick', name: 'New Brunswick / 新不伦瑞克' },
+      { value: 'Newfoundland', name: 'Newfoundland / 纽芬兰' },
+      { value: 'PEI', name: 'PEI / 爱德华王子岛' },
+    ],
+  });
+
+  const urgency = await select({
+    message: t('pref.urgency'),
+    choices: [
+      { value: 'asap', name: 'ASAP / 越快越好' },
+      { value: 'within_1_year', name: 'Within 1 year / 一年以内' },
+      { value: 'within_2_years', name: 'Within 2 years / 两年以内' },
+      { value: 'flexible', name: 'Flexible / 不着急' },
+    ],
+  });
+
+  const risk = await select({
+    message: t('pref.risk'),
+    choices: [
+      { value: 'low', name: 'Low (safest route only) / 低（只走最稳路线）' },
+      { value: 'medium', name: 'Medium (some uncertainty OK) / 中（可接受不确定性）' },
+      { value: 'high', name: 'High (willing to try new programs) / 高（愿意尝试新项目）' },
+    ],
+  });
+
+  const willStudy = await confirm({ message: t('pref.study'), default: false });
+  const willRelocate = await confirm({ message: t('pref.relocate'), default: true });
+  const antiRaw = await input({ message: t('pref.anti'), default: '' });
+  const antiPatterns = antiRaw ? antiRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  return {
+    name,
+    nationality,
+    age: parseInt(age, 10),
+    date_of_birth: dob,
+    marital_status: marital as 'single' | 'married' | 'common_law',
+    has_children: hasChildren,
+    highest_degree: degree,
+    field_of_study: field,
+    institution,
+    edu_country: eduCountry,
+    year_completed: parseInt(yearCompleted, 10),
+    eca_completed: ecaCompleted,
+    primary_test: testType as 'IELTS' | 'CELPIP' | 'none',
+    english_reading: engReading,
+    english_writing: engWriting,
+    english_listening: engListening,
+    english_speaking: engSpeaking,
+    has_french: hasFrench,
+    french_reading: frReading,
+    french_writing: frWriting,
+    french_listening: frListening,
+    french_speaking: frSpeaking,
+    current_occupation: occupation,
+    noc_code: noc,
+    teer_category: teer,
+    foreign_years: parseInt(foreignYears, 10),
+    canadian_years: parseInt(canadianYears, 10),
+    settlement_funds_cad: parseInt(settlement, 10),
+    willing_to_invest: willInvest,
+    has_job_offer: hasOffer,
+    relatives_in_canada: hasRelatives,
+    previous_study: prevStudy,
+    previous_work: prevWork,
+    target_provinces: provinces.length > 0 ? provinces : ['Ontario'],
+    timeline_urgency: urgency,
+    risk_tolerance: risk,
+    willing_to_study: willStudy,
+    willing_to_relocate: willRelocate,
+    anti_patterns: antiPatterns,
+    user_notes: '',
+  };
 }
 
 export async function initCommand(name: string): Promise<void> {
   const config = loadConfig();
 
-  // === Step 0: Language (always first) ===
   const lang = await select({
     message: t('init.language'),
     choices: [
-      { value: 'en', name: 'English' },
       { value: 'zh', name: '中文（简体）' },
+      { value: 'en', name: 'English' },
     ],
-    default: config.language || 'en',
+    default: config.language || 'zh',
   }) as Language;
 
   setLanguage(lang);
@@ -328,51 +243,7 @@ export async function initCommand(name: string): Promise<void> {
 
   console.log(chalk.bold(`\n  ${t('init.title')}: ${name}\n`));
 
-  const profile = loadProfile();
-
-  // === Step 1: Model override (ask first — determines if API key is needed) ===
-  if (config.model_override) {
-    const mo = config.model_override;
-    const maskedKey = mo.api_key.length > 8
-      ? mo.api_key.slice(0, 4) + '...' + mo.api_key.slice(-4)
-      : '****';
-    console.log(chalk.cyan(`  Custom model: ${mo.model}`));
-    console.log(chalk.cyan(`  Base URL:     ${mo.base_url}`));
-    console.log(chalk.cyan(`  API key:      ${maskedKey}\n`));
-
-    const modelAction = await select({
-      message: t('init.model_keep_or_change'),
-      choices: [
-        { value: 'keep', name: t('init.model_keep') },
-        { value: 'edit', name: t('init.model_edit') },
-        { value: 'remove', name: t('init.model_remove') },
-      ],
-    });
-
-    if (modelAction === 'edit') {
-      const model = await input({
-        message: t('init.model_name'),
-        default: mo.model,
-      });
-      const baseUrl = await input({
-        message: t('init.model_base_url'),
-        default: mo.base_url,
-        validate: (v) => v.startsWith('http') || 'Must be a URL',
-      });
-      const apiKey = await input({
-        message: t('init.model_api_key'),
-        default: mo.api_key,
-        validate: (v) => v.length > 0 || 'Required',
-      });
-      config.model_override = { provider_type: 'openai-compatible', model, base_url: baseUrl, api_key: apiKey };
-      saveConfig(config);
-      console.log(chalk.green(`  ${t('init.model_saved')}\n`));
-    } else if (modelAction === 'remove') {
-      delete config.model_override;
-      saveConfig(config);
-      console.log(chalk.green(`  ${t('init.model_removed')}\n`));
-    }
-  } else {
+  if (!config.model_override) {
     const wantOverride = await select({
       message: t('init.model_override'),
       choices: [
@@ -382,18 +253,9 @@ export async function initCommand(name: string): Promise<void> {
     });
 
     if (wantOverride === 'yes') {
-      const model = await input({
-        message: t('init.model_name'),
-        validate: (v) => v.length > 0 || 'Required',
-      });
-      const baseUrl = await input({
-        message: t('init.model_base_url'),
-        validate: (v) => v.startsWith('http') || 'Must be a URL',
-      });
-      const apiKey = await input({
-        message: t('init.model_api_key'),
-        validate: (v) => v.length > 0 || 'Required',
-      });
+      const model = await input({ message: t('init.model_name'), validate: v => v.length > 0 || 'Required' });
+      const baseUrl = await input({ message: t('init.model_base_url'), validate: v => v.startsWith('http') || 'Must be a URL' });
+      const apiKey = await input({ message: t('init.model_api_key'), validate: v => v.length > 0 || 'Required' });
       config.model_override = { provider_type: 'openai-compatible', model, base_url: baseUrl, api_key: apiKey };
       saveConfig(config);
       console.log(chalk.green(`\n  ${t('init.model_saved')}`));
@@ -401,67 +263,23 @@ export async function initCommand(name: string): Promise<void> {
     }
   }
 
-  // === Step 2: API key (only if no custom model and no Vertex AI) ===
   const useVertex = !!(process.env.CLAUDE_CODE_USE_VERTEX === '1' || process.env.GOOGLE_CLOUD_PROJECT);
-  if (!config.model_override && !useVertex) {
-    if (!config.api_key) {
-      const apiKey = await input({
-        message: t('init.api_key'),
-        validate: (v) => v.length > 0 || 'Required',
-      });
-      config.api_key = apiKey;
-      saveConfig(config);
-    } else {
-      const maskedKey = config.api_key.length > 8
-        ? config.api_key.slice(0, 4) + '...' + config.api_key.slice(-4)
-        : '****';
-      console.log(chalk.cyan(`  Anthropic API key: ${maskedKey}\n`));
-    }
+  if (!config.model_override && !useVertex && !config.api_key) {
+    const apiKey = await input({ message: t('init.api_key'), validate: v => v.length > 0 || 'Required' });
+    config.api_key = apiKey;
+    saveConfig(config);
   }
 
-  // === Step 3: Profile (first-time only) ===
-  const profileNeverSet = profile.loyalty_program === '' && profile.stated_vibes.length === 0 && profile.dietary.length === 0;
-  if (profileNeverSet && !loadExisting(name)) {
-    const loyalty = await select({
-      message: t('profile.loyalty'),
-      choices: [
-        { value: 'marriott_bonvoy', name: 'Marriott Bonvoy' },
-        { value: 'hilton_honors', name: 'Hilton Honors' },
-        { value: 'ihg_rewards', name: 'IHG Rewards' },
-        { value: 'hyatt', name: 'World of Hyatt' },
-        { value: 'none', name: 'None' },
-      ],
-    });
+  const answers = await collectAnswers(name);
+  const profileYaml = generateProfileYaml(answers);
+  const profile = parseProfileYaml(profileYaml);
 
-    const dietaryChoices = await checkbox({
-      message: t('profile.dietary'),
-      choices: [
-        { value: 'vegetarian', name: 'Vegetarian' },
-        { value: 'vegan', name: 'Vegan' },
-        { value: 'halal', name: 'Halal' },
-        { value: 'kosher', name: 'Kosher' },
-        { value: 'gluten_free', name: 'Gluten-free' },
-        { value: 'no_shellfish', name: 'No shellfish' },
-        { value: 'no_nuts', name: 'No nuts' },
-      ],
-    });
+  const crs = calculateCRS(profile);
+  console.log(chalk.bold(`\n  ${t('progress.crs_estimate')} ${crs.total}`));
+  console.log(`  Age: ${crs.details.age} | Education: ${crs.details.education} | Language: ${crs.details.first_language}`);
+  console.log(`  Canadian exp: ${crs.details.canadian_experience} | Skill transfer: ${crs.skill_transferability}`);
+  console.log(`  Additional: ${crs.additional_points}\n`);
 
-    profile.loyalty_program = loyalty === 'none' ? '' : loyalty;
-    profile.dietary = dietaryChoices;
-    saveProfile(profile);
-  }
-
-  // === Step 4: Trip answers ===
-  const existing = loadExisting(name);
-  let answers: InitAnswers;
-
-  if (existing) {
-    answers = await editAnswers(name, existing, profile);
-  } else {
-    answers = await collectAnswers(name, profile);
-  }
-
-  // === Step 5: LLM follow-up interview ===
   let provider;
   try {
     provider = createProvider(config);
@@ -470,89 +288,77 @@ export async function initCommand(name: string): Promise<void> {
     process.exit(1);
   }
 
-  if (!existing) {
-    const interviewSpinner = ora(t('trip.interview_generating')).start();
-    try {
-      const interviewPrompt = buildInterviewPrompt(answers);
-      const questionsRaw = await provider.complete(interviewPrompt, 2000);
-      const questions = parseJsonResponse(questionsRaw);
-      interviewSpinner.succeed(t('trip.interview_intro'));
+  // Follow-up interview
+  const interviewSpinner = ora(t('interview.generating')).start();
+  try {
+    const interviewPrompt = buildInterviewPrompt(profile);
+    const questionsRaw = await provider.complete(interviewPrompt, 2000);
+    const questions = parseJsonResponse(questionsRaw);
+    interviewSpinner.succeed(t('interview.intro'));
 
-      if (Array.isArray(questions) && questions.length > 0) {
-        const interviewAnswers: string[] = [];
-        for (const q of questions.slice(0, 5)) {
-          if (typeof q !== 'string') continue;
-          const answer = await input({ message: q });
-          if (answer.trim()) {
-            interviewAnswers.push(`Q: ${q}\nA: ${answer.trim()}`);
-          }
-        }
-        if (interviewAnswers.length > 0) {
-          answers.user_notes = interviewAnswers.join('\n\n');
+    if (Array.isArray(questions) && questions.length > 0) {
+      const interviewAnswers: string[] = [];
+      for (const q of questions.slice(0, 5)) {
+        if (typeof q !== 'string') continue;
+        const answer = await input({ message: q });
+        if (answer.trim()) {
+          interviewAnswers.push(`Q: ${q}\nA: ${answer.trim()}`);
         }
       }
-    } catch {
-      interviewSpinner.warn('Follow-up questions skipped (LLM unavailable)');
+      if (interviewAnswers.length > 0) {
+        answers.user_notes = interviewAnswers.join('\n\n');
+      }
     }
-  }
-
-  // === Step 6: Generate ===
-  const constraintsYaml = generateConstraints(answers);
-  const constraints = yaml.load(constraintsYaml) as TripConstraints;
-
-  let learnedSignals: string | undefined;
-  const learnedPath = getLearnedPath();
-  if (fs.existsSync(learnedPath)) {
-    learnedSignals = fs.readFileSync(learnedPath, 'utf-8');
+  } catch {
+    interviewSpinner.warn('Follow-up questions skipped (LLM unavailable)');
   }
 
   const spinner = ora(t('progress.generating_rubrics')).start();
   let rubricsYaml: string;
   try {
-    rubricsYaml = await generateRubrics(provider, constraints, learnedSignals);
+    rubricsYaml = await generateRubrics(provider, profile, crs);
     spinner.succeed(t('progress.rubrics_done'));
   } catch (err) {
     spinner.fail(t('progress.rubrics_fail'));
-    const msg = err instanceof Error ? err.message : String(err);
-    console.log(chalk.red(`\n  ${msg}`));
-    printProviderErrorHint(config, msg);
-    console.log();
-    process.exit(1);
-  }
-
-  spinner.start(t('progress.generating_plan'));
-  let planMd: string;
-  try {
-    planMd = await generatePlan(provider, constraints);
-    spinner.succeed(t('progress.plan_done'));
-  } catch (err) {
-    spinner.fail(t('progress.plan_fail'));
     console.log(chalk.red(`\n  ${err instanceof Error ? err.message : String(err)}\n`));
     process.exit(1);
   }
 
-  const programMd = generateProgram(constraints, config);
+  spinner.start(t('progress.generating_pathway'));
+  let pathwayMd: string;
+  try {
+    pathwayMd = await generatePathway(provider, profile, crs, SEED_PROGRAMS);
+    spinner.succeed(t('progress.pathway_done'));
+  } catch (err) {
+    spinner.fail(t('progress.pathway_fail'));
+    console.log(chalk.red(`\n  ${err instanceof Error ? err.message : String(err)}\n`));
+    process.exit(1);
+  }
 
-  const tripDirName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const tripDir = path.resolve(tripDirName);
+  const programMd = generateProgram(profile, config);
+  const programsDbJson = JSON.stringify(SEED_PROGRAMS, null, 2);
 
-  if (fs.existsSync(tripDir)) {
-    fs.rmSync(tripDir, { recursive: true, force: true });
+  const dirName = name.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-');
+  const projectDir = path.resolve(dirName);
+
+  if (fs.existsSync(projectDir)) {
+    fs.rmSync(projectDir, { recursive: true, force: true });
   }
 
   spinner.start(t('progress.creating_project'));
-  await scaffoldTrip(tripDir, {
-    constraints: constraintsYaml,
+  await scaffoldPathway(projectDir, {
+    profile: profileYaml,
     rubrics: rubricsYaml,
-    plan: planMd,
+    pathway: pathwayMd,
     program: programMd,
+    programsDb: programsDbJson,
   });
-  spinner.succeed(`${t('progress.project_created')} ${chalk.bold(tripDirName)}/`);
+  spinner.succeed(`${t('progress.project_created')} ${chalk.bold(dirName)}/`);
 
   console.log(`
   ${chalk.green(t('next.title'))}
-    cd ${tripDirName}
+    cd ${dirName}
     ${chalk.dim(t('next.review'))}
-    trip-optimizer run
+    immigration-optimizer run
 `);
 }

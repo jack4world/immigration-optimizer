@@ -3,14 +3,15 @@ import path from 'path';
 import yaml from 'js-yaml';
 import { simpleGit } from 'simple-git';
 import type { LLMProvider } from '../llm/provider.js';
-import type { TripConstraints, Rubrics, ActivitiesDB, IterationLog } from '../data/schemas.js';
+import type { ApplicantProfile, Rubrics, ProgramsDB, IterationLog } from '../data/schemas.js';
+import { calculateCRS } from '../crs/calculator.js';
 import { Scorer } from '../scoring/scorer.js';
 import { pickMutationType, generateMutation } from './mutations.js';
-import { appendResult, readResults, getLastBestScore } from './logger.js';
+import { appendResult, getLastBestScore } from './logger.js';
 
 export interface LoopOptions {
   provider: LLMProvider;
-  tripDir: string;
+  pathwayDir: string;
   recalibrationInterval?: number;
   onIteration?: (log: IterationLog) => void;
 }
@@ -18,24 +19,25 @@ export interface LoopOptions {
 export async function runOptimizationLoop(options: LoopOptions): Promise<void> {
   const {
     provider,
-    tripDir,
+    pathwayDir,
     recalibrationInterval = 10,
     onIteration,
   } = options;
 
-  const git = simpleGit(tripDir);
-  const resultsPath = path.join(tripDir, 'results.tsv');
-  const constraintsPath = path.join(tripDir, 'constraints.yaml');
-  const rubricsPath = path.join(tripDir, 'rubrics.yaml');
-  const planPath = path.join(tripDir, 'plan.md');
-  const dbPath = path.join(tripDir, 'activities_db.json');
+  const git = simpleGit(pathwayDir);
+  const resultsPath = path.join(pathwayDir, 'results.tsv');
+  const profilePath = path.join(pathwayDir, 'profile.yaml');
+  const rubricsPath = path.join(pathwayDir, 'rubrics.yaml');
+  const pathwayPath = path.join(pathwayDir, 'pathway.md');
+  const dbPath = path.join(pathwayDir, 'programs_db.json');
 
-  // Load static files
-  const constraints = yaml.load(fs.readFileSync(constraintsPath, 'utf-8')) as TripConstraints;
+  const profile = yaml.load(fs.readFileSync(profilePath, 'utf-8')) as ApplicantProfile;
   const rubrics = yaml.load(fs.readFileSync(rubricsPath, 'utf-8')) as Rubrics;
   const scorer = new Scorer(provider);
 
-  // Check for crash recovery
+  const crs = calculateCRS(profile);
+  console.log(`  CRS Estimate: ${crs.total}`);
+
   const lastBest = getLastBestScore(resultsPath);
   let currentScore: number;
   let iteration: number;
@@ -45,14 +47,13 @@ export async function runOptimizationLoop(options: LoopOptions): Promise<void> {
     iteration = lastBest.iteration + 1;
     console.log(`  Resuming from iteration ${iteration} (score: ${currentScore.toFixed(2)})`);
   } else {
-    // Score baseline
     console.log('  Scoring baseline...');
-    const planContent = fs.readFileSync(planPath, 'utf-8');
-    const activitiesDb = JSON.parse(fs.readFileSync(dbPath, 'utf-8')) as ActivitiesDB;
-    const baselineResult = await scorer.scoreAbsolute(planContent, activitiesDb, constraints, rubrics);
+    const pathwayContent = fs.readFileSync(pathwayPath, 'utf-8');
+    const programsDb = JSON.parse(fs.readFileSync(dbPath, 'utf-8')) as ProgramsDB;
+    const baselineResult = await scorer.scoreAbsolute(pathwayContent, programsDb, profile, rubrics, crs);
     currentScore = baselineResult.composite_score;
 
-    fs.writeFileSync(path.join(tripDir, 'score.json'), JSON.stringify(baselineResult, null, 2));
+    fs.writeFileSync(path.join(pathwayDir, 'score.json'), JSON.stringify(baselineResult, null, 2));
 
     const log: IterationLog = {
       iteration: 0,
@@ -75,7 +76,6 @@ export async function runOptimizationLoop(options: LoopOptions): Promise<void> {
   console.log('  Starting optimization loop (Ctrl+C to stop)');
   console.log(`  Score: ${currentScore.toFixed(2)}/100\n`);
 
-  // Handle graceful shutdown
   let running = true;
   const shutdown = () => {
     running = false;
@@ -85,32 +85,36 @@ export async function runOptimizationLoop(options: LoopOptions): Promise<void> {
   process.on('SIGTERM', shutdown);
 
   while (running) {
-    const planContent = fs.readFileSync(planPath, 'utf-8');
-    const activitiesDb = JSON.parse(fs.readFileSync(dbPath, 'utf-8')) as ActivitiesDB;
+    const pathwayContent = fs.readFileSync(pathwayPath, 'utf-8');
+    let programsDb = JSON.parse(fs.readFileSync(dbPath, 'utf-8')) as ProgramsDB;
 
-    // Pick mutation type
     const mutationType = pickMutationType(iteration, consecutiveDiscards);
 
     try {
-      // Generate mutation
       process.stdout.write(`  [${iteration}] ${mutationType} — generating mutation...`);
       const mutation = await generateMutation(
         provider,
         mutationType,
-        planContent,
-        constraints,
-        activitiesDb,
+        pathwayContent,
+        profile,
+        programsDb,
       );
-      process.stdout.write('\r\x1b[K'); // clear line
+      process.stdout.write('\r\x1b[K');
 
-      // Apply mutation
-      fs.writeFileSync(planPath, mutation.newPlanContent);
-      await git.add('plan.md');
+      fs.writeFileSync(pathwayPath, mutation.newPathwayContent);
+      await git.add('pathway.md');
+
+      if (mutation.new_programs && mutation.new_programs.length > 0) {
+        for (const prog of mutation.new_programs) {
+          programsDb[prog.id] = prog;
+        }
+        fs.writeFileSync(dbPath, JSON.stringify(programsDb, null, 2));
+        await git.add('programs_db.json');
+      }
+
       await git.commit(`${mutationType}: ${mutation.description}`);
-
       const commitHash = (await git.revparse(['HEAD'])).trim().substring(0, 7);
 
-      // Score
       let scoreAfter: number;
       let verdict: string;
 
@@ -118,30 +122,29 @@ export async function runOptimizationLoop(options: LoopOptions): Promise<void> {
       process.stdout.write(`  [${iteration}] ${mutationType} — scoring (${isRecalibration ? 'absolute' : 'comparative'})...`);
 
       if (isRecalibration) {
-        // Full absolute scoring for recalibration
         const result = await scorer.scoreAbsolute(
-          mutation.newPlanContent,
-          activitiesDb,
-          constraints,
+          mutation.newPathwayContent,
+          programsDb,
+          profile,
           rubrics,
-          (msg) => {}, // silent logging during loop
+          crs,
+          () => {},
         );
         scoreAfter = result.composite_score;
         verdict = scoreAfter > currentScore ? 'better' : scoreAfter < currentScore ? 'worse' : 'neutral';
-        fs.writeFileSync(path.join(tripDir, 'score.json'), JSON.stringify(result, null, 2));
+        fs.writeFileSync(path.join(pathwayDir, 'score.json'), JSON.stringify(result, null, 2));
       } else {
-        // Comparative scoring
         const result = await scorer.scoreComparative(
-          planContent,
-          mutation.newPlanContent,
+          pathwayContent,
+          mutation.newPathwayContent,
           mutation.description,
           rubrics,
-          (msg) => {}, // silent
+          () => {},
         );
         scoreAfter = currentScore + result.composite_delta;
         verdict = result.verdict;
       }
-      process.stdout.write('\r\x1b[K'); // clear line
+      process.stdout.write('\r\x1b[K');
 
       const delta = scoreAfter - currentScore;
       const status = verdict === 'better' ? 'keep' as const : 'discard' as const;
@@ -150,12 +153,11 @@ export async function runOptimizationLoop(options: LoopOptions): Promise<void> {
         currentScore = scoreAfter;
         consecutiveDiscards = 0;
       } else {
-        // Revert
         await git.reset(['--hard', 'HEAD~1']);
         consecutiveDiscards++;
       }
 
-      const log: IterationLog = {
+      const iterLog: IterationLog = {
         iteration,
         commit: commitHash,
         score_before: currentScore - (status === 'keep' ? delta : 0),
@@ -166,19 +168,20 @@ export async function runOptimizationLoop(options: LoopOptions): Promise<void> {
         description: mutation.description,
       };
 
-      appendResult(resultsPath, log);
-      onIteration?.(log);
+      appendResult(resultsPath, iterLog);
+      onIteration?.(iterLog);
 
       const statusIcon = status === 'keep' ? '\x1b[32m\u2713\x1b[0m' : '\x1b[31m\u2717\x1b[0m';
       const deltaStr = delta >= 0 ? `\x1b[32m+${delta.toFixed(2)}\x1b[0m` : `\x1b[31m${delta.toFixed(2)}\x1b[0m`;
       const scoreStr = `\x1b[1m${currentScore.toFixed(2)}\x1b[0m`;
-      console.log(`  [${iteration}] ${statusIcon} ${mutationType.padEnd(10)} ${deltaStr}  ${scoreStr}  ${mutation.description.substring(0, 60)}`);
+      console.log(`  [${iteration}] ${statusIcon} ${mutationType.padEnd(16)} ${deltaStr}  ${scoreStr}  ${mutation.description.substring(0, 50)}`);
 
-    } catch (error: any) {
-      console.log(`  [${iteration}] ERROR: ${error.message} -- reverting`);
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      console.log(`  [${iteration}] ERROR: ${errMsg} -- reverting`);
       try {
         await git.reset(['--hard', 'HEAD']);
-      } catch {}
+      } catch { /* ignore */ }
       consecutiveDiscards++;
     }
 

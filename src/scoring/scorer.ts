@@ -1,43 +1,33 @@
 import type { LLMProvider } from '../llm/provider.js';
 import type {
-  Rubrics, ActivitiesDB, TripConstraints,
+  Rubrics, ProgramsDB, ApplicantProfile,
   AbsoluteScoreResult, ComparativeScoreResult,
-  DimensionResult,
+  DimensionResult, CRSBreakdown,
 } from '../data/schemas.js';
 import { scoreDimension } from './dimension-scorer.js';
-import { runAdversarialCritic, applyPenalties } from './critic.js';
+import { runAdversarialCritic, runRewardEvaluator, applyPenalties, applyRewards } from './critic.js';
 import { runHolisticPass, applyHolisticAdjustments } from './holistic.js';
 import { buildComparativePrompt } from './prompts.js';
 import { parseJsonResponse } from '../llm/json-parser.js';
 
-function checkSourceConfidence(activitiesDb: ActivitiesDB): string | null {
+function checkSourceConfidence(programsDb: ProgramsDB): string | null {
   let totalEntries = 0;
   let llmOnlyEntries = 0;
 
-  for (const [key, data] of Object.entries(activitiesDb || {})) {
-    if (key.startsWith('_')) continue; // skip _meta
-    if (!data) continue;
-    for (const a of data.activities || []) {
-      totalEntries++;
-      if (!a.source || a.source === 'llm_knowledge' || a.source === 'training-data' || a.source === 'pre-training knowledge') {
-        llmOnlyEntries++;
-      }
-    }
-    for (const r of data.restaurants || []) {
-      totalEntries++;
-      if (!r.source || r.source === 'llm_knowledge' || r.source === 'training-data' || r.source === 'pre-training knowledge') {
-        llmOnlyEntries++;
-      }
+  for (const prog of Object.values(programsDb)) {
+    totalEntries++;
+    if (!prog.source || prog.source === 'llm_knowledge') {
+      llmOnlyEntries++;
     }
   }
 
   if (totalEntries === 0) {
-    return 'No research data — food/experience scores capped at 85';
+    return 'No program research data — scores capped at 85';
   }
 
   const llmRatio = llmOnlyEntries / totalEntries;
   if (llmRatio > 0.8) {
-    return `${Math.round(llmRatio * 100)}% of research data is unverified LLM knowledge — food/experience scores capped at 85`;
+    return `${Math.round(llmRatio * 100)}% of program data is unverified LLM knowledge — success/robustness scores capped at 85`;
   }
 
   return null;
@@ -50,45 +40,50 @@ export class Scorer {
   ) {}
 
   async scoreAbsolute(
-    planContent: string,
-    activitiesDb: ActivitiesDB,
-    constraints: TripConstraints,
+    pathwayContent: string,
+    programsDb: ProgramsDB,
+    profile: ApplicantProfile,
     rubrics: Rubrics,
+    crs?: CRSBreakdown,
     log: (msg: string) => void = console.log,
   ): Promise<AbsoluteScoreResult> {
     const dimensions = rubrics.dimensions || {};
     const allScores: Record<string, DimensionResult> = {};
 
-    // Pass 1: Score each dimension
     for (const [dimName, dimConfig] of Object.entries(dimensions)) {
       log(`  Scoring ${dimName}...`);
-      const result = await scoreDimension(this.provider, dimName, dimConfig, planContent);
+      const result = await scoreDimension(this.provider, dimName, dimConfig, pathwayContent);
       allScores[dimName] = result;
       log(`  ${dimName}: ${result.score.toFixed(1)}`);
     }
 
-    // Pass 2: Adversarial critic
     log('  Running adversarial critic...');
-    const penalties = await runAdversarialCritic(this.provider, planContent, activitiesDb, rubrics);
+    const penalties = await runAdversarialCritic(this.provider, pathwayContent, programsDb, rubrics);
     log(`  ${penalties.length} penalties found`);
 
     const maxPen = typeof rubrics.adversarial_penalties?.max_penalty_per_dimension === 'number'
       ? rubrics.adversarial_penalties.max_penalty_per_dimension
-      : -20;
+      : -25;
     applyPenalties(allScores, penalties, maxPen);
 
-    // Pass 3: Holistic cross-dimension
+    log('  Running reward evaluator...');
+    const rewards = await runRewardEvaluator(this.provider, pathwayContent, programsDb, rubrics);
+    log(`  ${rewards.length} rewards found`);
+
+    const maxRew = typeof rubrics.rewards?.max_reward_per_dimension === 'number'
+      ? rubrics.rewards.max_reward_per_dimension
+      : 15;
+    applyRewards(allScores, rewards, maxRew);
+
     log('  Running holistic pass...');
     const adjustments = await runHolisticPass(this.provider, allScores);
     log(`  ${adjustments.length} adjustments`);
     applyHolisticAdjustments(allScores, adjustments);
 
-    // Pass 4: Source confidence dampening
-    // If activities_db is entirely LLM-sourced, cap food and experience scores
-    const sourceWarning = checkSourceConfidence(activitiesDb);
+    const sourceWarning = checkSourceConfidence(programsDb);
     if (sourceWarning) {
       log(`  ⚠ ${sourceWarning}`);
-      for (const dim of ['food_score', 'experience_quality']) {
+      for (const dim of ['success_probability', 'plan_robustness']) {
         if (dim in allScores && allScores[dim].score > 85) {
           const before = allScores[dim].score;
           allScores[dim].score = Math.min(allScores[dim].score, 85);
@@ -97,7 +92,6 @@ export class Scorer {
       }
     }
 
-    // Compute composite
     const composite = Object.values(allScores).reduce(
       (sum, d) => sum + d.weight * d.score,
       0,
@@ -108,21 +102,23 @@ export class Scorer {
       composite_score: Math.round(composite * 100) / 100,
       components: allScores,
       penalties,
+      rewards,
       holistic_adjustments: adjustments,
+      crs_estimate: crs,
       scored_at: new Date().toISOString(),
       model: this.model,
     };
   }
 
   async scoreComparative(
-    oldPlanContent: string,
-    newPlanContent: string,
+    oldPathway: string,
+    newPathway: string,
     mutation: string,
     rubrics: Rubrics,
     log: (msg: string) => void = console.log,
   ): Promise<ComparativeScoreResult> {
-    log('  Comparing plans...');
-    const prompt = buildComparativePrompt(oldPlanContent, newPlanContent, mutation, rubrics);
+    log('  Comparing pathways...');
+    const prompt = buildComparativePrompt(oldPathway, newPathway, mutation, rubrics);
     const response = await this.provider.complete(prompt, 4000);
 
     let deltas: Record<string, number> = {};
@@ -135,7 +131,6 @@ export class Scorer {
       log('  WARNING: comparative parse failed, treating as neutral');
     }
 
-    // Clamp deltas to +/-5
     const clamped: Record<string, number> = {};
     for (const [key, delta] of Object.entries(deltas)) {
       if (typeof delta === 'number') {
@@ -143,7 +138,6 @@ export class Scorer {
       }
     }
 
-    // Compute per-dimension impact
     const dimensions2 = rubrics.dimensions || {};
     const dimDeltas: Record<string, { delta: number; weight: number; affected_subs: Record<string, number> }> = {};
 
@@ -167,7 +161,6 @@ export class Scorer {
       };
     }
 
-    // Composite delta
     const compositeDelta = Object.values(dimDeltas).reduce(
       (sum, d) => sum + d.weight * d.delta,
       0,

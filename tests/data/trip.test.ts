@@ -1,66 +1,70 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { scaffoldTrip } from '../../src/data/trip.js';
+import { scaffoldPathway } from '../../src/data/pathway.js';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-describe('scaffoldTrip', () => {
-  const testDir = path.join(os.tmpdir(), 'trip-scaffold-' + Date.now());
+describe('scaffoldPathway', () => {
+  const testDir = path.join(os.tmpdir(), 'imm-scaffold-' + Date.now());
 
   afterEach(() => fs.rmSync(testDir, { recursive: true, force: true }));
 
-  it('creates trip directory with all required files', async () => {
-    const tripDir = path.join(testDir, 'japan-2027');
-    await scaffoldTrip(tripDir, {
-      constraints: 'trip:\n  name: test',
+  it('creates pathway directory with all required files', async () => {
+    const dir = path.join(testDir, 'case-001');
+    await scaffoldPathway(dir, {
+      profile: 'personal:\n  name: test',
       rubrics: 'dimensions: {}',
-      plan: '# Day 1\nArrival',
+      pathway: '# Step 1\nIELTS',
       program: '# Agent Instructions',
+      programsDb: '{}',
     });
 
-    expect(fs.existsSync(path.join(tripDir, 'constraints.yaml'))).toBe(true);
-    expect(fs.existsSync(path.join(tripDir, 'rubrics.yaml'))).toBe(true);
-    expect(fs.existsSync(path.join(tripDir, 'plan.md'))).toBe(true);
-    expect(fs.existsSync(path.join(tripDir, 'program.md'))).toBe(true);
-    expect(fs.existsSync(path.join(tripDir, 'activities_db.json'))).toBe(true);
-    expect(fs.existsSync(path.join(tripDir, '.gitignore'))).toBe(true);
+    expect(fs.existsSync(path.join(dir, 'profile.yaml'))).toBe(true);
+    expect(fs.existsSync(path.join(dir, 'rubrics.yaml'))).toBe(true);
+    expect(fs.existsSync(path.join(dir, 'pathway.md'))).toBe(true);
+    expect(fs.existsSync(path.join(dir, 'program.md'))).toBe(true);
+    expect(fs.existsSync(path.join(dir, 'programs_db.json'))).toBe(true);
+    expect(fs.existsSync(path.join(dir, '.gitignore'))).toBe(true);
   });
 
-  it('creates empty activities_db.json', async () => {
-    const tripDir = path.join(testDir, 'japan-2027');
-    await scaffoldTrip(tripDir, {
-      constraints: 'trip:\n  name: test',
+  it('writes correct programs_db.json', async () => {
+    const dir = path.join(testDir, 'case-002');
+    await scaffoldPathway(dir, {
+      profile: 'personal:\n  name: test',
       rubrics: 'dimensions: {}',
-      plan: '# Day 1',
+      pathway: '# Step 1',
       program: '# Instructions',
+      programsDb: '{"ee_fswp": {"id": "ee_fswp"}}',
     });
 
-    const db = JSON.parse(fs.readFileSync(path.join(tripDir, 'activities_db.json'), 'utf-8'));
-    expect(db).toEqual({});
+    const db = JSON.parse(fs.readFileSync(path.join(dir, 'programs_db.json'), 'utf-8'));
+    expect(db.ee_fswp.id).toBe('ee_fswp');
   });
 
   it('initializes git repo with initial commit', async () => {
-    const tripDir = path.join(testDir, 'japan-2027');
-    await scaffoldTrip(tripDir, {
-      constraints: 'trip:\n  name: test',
+    const dir = path.join(testDir, 'case-003');
+    await scaffoldPathway(dir, {
+      profile: 'personal:\n  name: test',
       rubrics: 'dimensions: {}',
-      plan: '# Day 1',
+      pathway: '# Step 1',
       program: '# Instructions',
+      programsDb: '{}',
     });
 
-    expect(fs.existsSync(path.join(tripDir, '.git'))).toBe(true);
+    expect(fs.existsSync(path.join(dir, '.git'))).toBe(true);
   });
 
   it('writes correct file contents', async () => {
-    const tripDir = path.join(testDir, 'japan-2027');
-    await scaffoldTrip(tripDir, {
-      constraints: 'trip:\n  name: Japan 2027',
-      rubrics: 'dimensions:\n  food: {}',
-      plan: '# Day 1\nTokyo arrival',
-      program: '# Optimize this trip',
+    const dir = path.join(testDir, 'case-004');
+    await scaffoldPathway(dir, {
+      profile: 'personal:\n  name: Zhang San',
+      rubrics: 'dimensions:\n  success: {}',
+      pathway: '# Step 1\nIELTS exam',
+      program: '# Optimize pathway',
+      programsDb: '{}',
     });
 
-    expect(fs.readFileSync(path.join(tripDir, 'constraints.yaml'), 'utf-8')).toBe('trip:\n  name: Japan 2027');
-    expect(fs.readFileSync(path.join(tripDir, 'plan.md'), 'utf-8')).toBe('# Day 1\nTokyo arrival');
+    expect(fs.readFileSync(path.join(dir, 'profile.yaml'), 'utf-8')).toBe('personal:\n  name: Zhang San');
+    expect(fs.readFileSync(path.join(dir, 'pathway.md'), 'utf-8')).toBe('# Step 1\nIELTS exam');
   });
 });

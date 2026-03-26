@@ -24,7 +24,7 @@ export function createProvider(config: Config): LLMProvider {
   if (!config.api_key) {
     throw new Error(
       'No API key configured and no Vertex AI environment detected.\n' +
-      '  Run: trip-optimizer config set api_key <key>\n' +
+      '  Run: immigration-optimizer config set api_key <key>\n' +
       '  Or set GOOGLE_CLOUD_PROJECT + CLAUDE_CODE_USE_VERTEX=1 for Vertex AI'
     );
   }
