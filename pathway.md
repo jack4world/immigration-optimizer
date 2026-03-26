@@ -175,8 +175,10 @@ generated_at: "2026-03-25"
 **理由**:
 - Ontario PNP HCP从Express Entry池中直接筛选候选人
 - 要求: Express Entry档案中 + CRS满足Ontario的筛选线
-- 机械工程NOC 21301属于Ontario需求职业
+- 机械工程NOC 21301属于Ontario需求职业（TEER 1，制造业重点领域）
+- Ontario HCP定期针对特定NOC/行业发出定向邀请，NOC 21301历史上多次被选中
 - Ontario是申请人首选省份，有优质中学教育资源
+- **额外选项**: 如法语达CLB 7，可同时符合Ontario French-Speaking Skilled Worker Stream
 
 **资格检查**:
 - ✅ Express Entry档案有效
