@@ -6,7 +6,7 @@ backup_program: "Alberta PNP - Alberta Express Entry Stream"
 crs_estimate: 283
 crs_with_pnp: 883
 total_duration_months: 12
-total_cost_cad: 13350
+total_cost_cad: 14200
 generated_at: "2026-03-25"
 ---
 
@@ -27,7 +27,8 @@ generated_at: "2026-03-25"
 
 **主路线**: Ontario PNP 人力资本优先 → Express Entry → PR
 **备选A**: Alberta PNP Express Entry类别
-**备选B**: BC PNP 技术工人类别（需先获得BC省雇主offer）
+**备选B**: Saskatchewan SINP Express Entry类别（低竞争，无需雇主offer）
+**备选C**: BC PNP 技术工人类别（需先获得BC省雇主offer）
 **CRS提分**: 重考IELTS冲CLB 9+ (预计+20-30分) + 法语TEF分阶段（CLB 5先+25分，后冲CLB 7再+25分）
 
 ## 步骤总览
@@ -39,8 +40,9 @@ generated_at: "2026-03-25"
 | 3a | 申请无犯罪证明（提前启动） | 2026-04 ~ 2026-06 (4-6周) | $200 | 待开始 | 与步骤1、2并行 |
 | 3b | 创建Express Entry档案（用现有成绩） | 2026-04 (立即) | $0 | 待开始 | 与步骤1、2并行 |
 | 4 | 更新EE档案（新语言成绩）→ 申请Ontario PNP | 2026-07 ~ 2026-10 (3月) | $1,500 | 待开始 | 同时申请Alberta PNP |
-| 5 | 申请Alberta PNP Express Entry | 2026-07 ~ 2026-10 (3月) | $500 | 待开始 | 与步骤4并行 |
-| 6 | 获得省提名 (CRS +600) | 2026-10 | $0 | 待开始 | - |
+| 5a | 申请Alberta PNP Express Entry | 2026-07 ~ 2026-10 (3月) | $500 | 待开始 | 与步骤4并行 |
+| 5b | 申请Saskatchewan SINP Express Entry | 2026-07 ~ 2026-09 (1-3月) | $350 | 待开始 | 与步骤4、5a并行 |
+| 6 | 获得省提名 (CRS +600) | 2026-09~10 | $0 | 待开始 | - |
 | 7 | 收到ITA，提交PR申请 | 2026-10 ~ 2026-11 (1月) | $2,350 | 待开始 | - |
 | 8 | 体检（全家） | 2026-08 ~ 2026-09 | $1,000 | 待开始 | 与步骤4-5并行 |
 | 9 | 生物采集 | 2026-11 | $170 | 待开始 | - |
@@ -224,6 +226,34 @@ generated_at: "2026-03-25"
 
 ---
 
+### 步骤 5b: 申请Saskatchewan SINP Express Entry
+
+**目标**: 第三条并行省提名路线（CRS +600分），竞争最低
+
+**理由**:
+- Saskatchewan SINP Express Entry从EE池筛选，无需雇主offer
+- 竞争程度"low"，处理时间1-3个月（最快的PNP之一）
+- 机械工程NOC 21301在Saskatchewan有需求（石油、采矿、制造业）
+- 申请费仅$350，风险极低
+- 申请人愿意搬到非首选省份（willing_to_relocate_province: true）
+
+**资格检查**:
+- ✅ Express Entry档案有效
+- ✅ CLB 7+满足最低要求
+- ✅ 15年海外工作经验
+- ✅ 本科学历 + ECA
+- ⚠️ 需确认NOC 21301在Saskatchewan In-Demand Occupation List上
+
+**时间线**:
+- 2026-07: 提交Saskatchewan EOI
+- 2026-07~09: 等待邀请（处理速度快）
+
+**费用**: $350
+
+**权衡**: Saskatchewan非首选省份，但获得PR后可搬到任何省份
+
+---
+
 ### 步骤 6: 获得省提名
 
 **目标**: CRS +600分，确保下次Express Entry抽签被邀请
@@ -313,7 +343,7 @@ generated_at: "2026-03-25"
 
 ### Plan B: BC PNP 技术工人类别
 
-**触发条件**: Ontario和Alberta PNP均未在2026-10前发出邀请
+**触发条件**: Ontario、Alberta、Saskatchewan PNP均未在2026-10前发出邀请
 
 **路线**:
 1. 在BC找到机械工程相关雇主offer
@@ -376,11 +406,12 @@ generated_at: "2026-03-25"
 | TEF考试（含补考）+ 法语课程 | $1,000 |
 | Ontario PNP申请费 | $1,500 |
 | Alberta PNP申请费 | $500 |
+| Saskatchewan SINP申请费 | $350 |
 | PR申请费（全家） | $2,350 |
 | RPRF登陆费 | $1,030 |
 | 体检（全家） | $1,200 |
 | 无犯罪证明 | $200 |
 | 生物采集 | $170 |
 | 机票（全家） | $5,000 |
-| **小计（不含安家资金）** | **$13,350** |
+| **小计（不含安家资金）** | **$14,200** |
 | 安家资金（已有） | $30,000 |

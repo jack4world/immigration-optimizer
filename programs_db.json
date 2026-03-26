@@ -921,5 +921,134 @@
     "source": "provincial_official",
     "last_verified": "2026-03-01",
     "url": "https://www.quebec.ca/en/immigration/permanent/immigrate-business/self-employed-workers"
+  },
+  "sk_express_entry": {
+    "id": "sk_express_entry",
+    "name": "Saskatchewan PNP - International Skilled Worker Express Entry",
+    "name_zh": "萨斯喀彻温省提名 - 国际技术工人快速通道",
+    "category": "pnp",
+    "stream": "International Skilled Worker - Saskatchewan Express Entry",
+    "province": "Saskatchewan",
+    "description": "Saskatchewan selects candidates from the federal EE pool with occupation in demand",
+    "description_zh": "萨省从联邦EE候选池中选择职业紧缺的候选人，无需雇主offer",
+    "eligibility": {
+      "min_clb": 7,
+      "min_education": "high_school",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 1,
+      "min_noc_teer": 3,
+      "min_settlement_funds": 0,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Active Express Entry profile",
+        "Score 60+ on Saskatchewan assessment grid",
+        "Occupation on Saskatchewan In-Demand Occupation List",
+        "Education credential assessed (ECA)"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 1,
+        "max": 3
+      },
+      "application_fee_cad": 350,
+      "additional_costs": [],
+      "total_estimated_cost_cad": 350
+    },
+    "metrics": {
+      "success_rate_estimate": 78,
+      "annual_quota": 6000,
+      "competition_level": "low",
+      "draw_frequency": "monthly"
+    },
+    "source": "llm_knowledge",
+    "last_verified": "2026-03-26"
+  },
+  "on_skilled_trades": {
+    "id": "on_skilled_trades",
+    "name": "Ontario PNP - Skilled Trades Stream",
+    "name_zh": "安大略省提名 - 技工类别",
+    "category": "pnp",
+    "stream": "Skilled Trades Stream",
+    "province": "Ontario",
+    "description": "For EE candidates with skilled trade experience in Ontario",
+    "description_zh": "面向在安大略省有技工经验的EE候选人",
+    "eligibility": {
+      "min_clb": 5,
+      "min_education": "high_school",
+      "min_work_years_canadian": 1,
+      "min_work_years_foreign": 0,
+      "min_noc_teer": 2,
+      "min_settlement_funds": 0,
+      "requires_job_offer": false,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Active Express Entry profile under CEC or FSTP",
+        "1+ year Ontario work experience in skilled trade",
+        "Valid trade certification"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 3,
+        "max": 6
+      },
+      "application_fee_cad": 1500,
+      "additional_costs": [],
+      "total_estimated_cost_cad": 1500
+    },
+    "metrics": {
+      "success_rate_estimate": 70,
+      "annual_quota": 3000,
+      "competition_level": "medium"
+    },
+    "source": "llm_knowledge",
+    "last_verified": "2026-03-26"
+  },
+  "bc_skills_immigration_eebc": {
+    "id": "bc_skills_immigration_eebc",
+    "name": "BC PNP - Skills Immigration EEBC (Express Entry BC)",
+    "name_zh": "BC省提名 - 技术移民快速通道类别",
+    "category": "pnp",
+    "stream": "Skills Immigration - Express Entry BC",
+    "province": "British Columbia",
+    "description": "BC selects skilled workers from the federal EE pool, requires BC job offer",
+    "description_zh": "BC省从联邦EE候选池中选择技术工人，需要BC省雇主offer",
+    "eligibility": {
+      "min_clb": 4,
+      "min_education": "high_school",
+      "min_work_years_canadian": 0,
+      "min_work_years_foreign": 2,
+      "min_noc_teer": 3,
+      "min_settlement_funds": 0,
+      "requires_job_offer": true,
+      "requires_lmia": false,
+      "requires_provincial_nomination": false,
+      "additional_requirements": [
+        "Active Express Entry profile",
+        "Job offer from BC employer",
+        "Job offer in NOC TEER 0/1/2/3"
+      ]
+    },
+    "processing": {
+      "typical_processing_months": {
+        "min": 2,
+        "max": 4
+      },
+      "application_fee_cad": 1150,
+      "additional_costs": [],
+      "total_estimated_cost_cad": 1150
+    },
+    "metrics": {
+      "success_rate_estimate": 80,
+      "annual_quota": 8000,
+      "competition_level": "medium",
+      "draw_frequency": "weekly"
+    },
+    "source": "llm_knowledge",
+    "last_verified": "2026-03-26"
   }
 }
