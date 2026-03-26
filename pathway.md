@@ -5,7 +5,7 @@ primary_program: "Ontario PNP - Human Capital Priorities (via Express Entry)"
 backup_program: "Alberta PNP - Alberta Express Entry Stream"
 crs_estimate: 283
 crs_with_pnp: 883
-total_duration_months: 12
+total_duration_months: 9-12
 total_cost_cad: 9450
 generated_at: "2026-03-25"
 ---
@@ -49,8 +49,8 @@ generated_at: "2026-03-25"
 | 9 | 生物采集 | 2026-11 | $170 | 待开始 | - |
 | 10 | PR审批 + 登陆 | 2026-11 ~ 2027-03 (4月) | $1,000 | 待开始 | - |
 
-**预计总时长**: 12个月 (2026-04 ~ 2027-03)
-**预计总费用**: $7,620 CAD (不含安家资金)
+**预计总时长**: 9~12个月 (2026-04 ~ 2027-01/03，取决于PNP获批速度)
+**移民必需费用**: $6,150~7,300 CAD | **含条件触发**: 最高$9,450 CAD
 
 ---
 
