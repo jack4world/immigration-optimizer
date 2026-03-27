@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AI-powered CLI that autonomously optimizes Canadian immigration pathways. Calculates CRS scores, checks eligibility across 19+ programs, and iteratively improves your pathway to Permanent Residency.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍁</text></svg>">
   <title>immigration-optimizer — AI-Powered Canadian Immigration Pathway Optimizer</title>
   <style>
     :root {
@@ -134,7 +136,7 @@
     }
 
     /* --- Sections --- */
-    section { margin-bottom: 3rem; }
+    section { margin-bottom: 3rem; scroll-margin-top: 60px; }
     section h2 {
       font-family: var(--font-serif);
       font-size: 1.6rem;
@@ -409,7 +411,7 @@
       .programs-page.active { grid-template-columns: 1fr; }
       .modes-grid { grid-template-columns: 1fr; }
       .pipeline { flex-direction: column; }
-      .pipeline-arrow { transform: rotate(90deg); }
+      .pipeline-arrow { transform: rotate(90deg); padding: 0.3rem 0; }
       .hero h1 { font-size: 2rem; }
       nav .links { display: none; }
     }
@@ -425,8 +427,9 @@
     <a href="#mutations">Mutations</a>
     <a href="#programs">Programs</a>
     <a href="#agent">Agent</a>
+    <a href="#quickstart">Quick Start</a>
   </div>
-  <a class="gh-link" href="https://github.com/jack4world/immigration-optimizer" target="_blank">GitHub</a>
+  <a class="gh-link" href="https://github.com/jack4world/immigration-optimizer" target="_blank" rel="noopener noreferrer">GitHub</a>
 </nav>
 
 <main>
@@ -467,31 +470,31 @@
 
     <div class="pipeline">
       <div class="pipeline-step">
-        <div class="step-icon">&#128203;</div>
+        <div class="step-icon" aria-hidden="true">&#128203;</div>
         <div class="step-title">Profile</div>
         <div class="step-desc">Parse applicant YAML</div>
       </div>
       <div class="pipeline-arrow">&rarr;</div>
       <div class="pipeline-step">
-        <div class="step-icon">&#128270;</div>
+        <div class="step-icon" aria-hidden="true">&#128270;</div>
         <div class="step-title">Research</div>
         <div class="step-desc">Web search + seed DB</div>
       </div>
       <div class="pipeline-arrow">&rarr;</div>
       <div class="pipeline-step">
-        <div class="step-icon">&#9879;</div>
+        <div class="step-icon" aria-hidden="true">&#9879;</div>
         <div class="step-title">Mutate</div>
         <div class="step-desc">Generate pathway change</div>
       </div>
       <div class="pipeline-arrow">&rarr;</div>
       <div class="pipeline-step">
-        <div class="step-icon">&#9989;</div>
+        <div class="step-icon" aria-hidden="true">&#9989;</div>
         <div class="step-title">Score</div>
         <div class="step-desc">5-dim + critic eval</div>
       </div>
       <div class="pipeline-arrow">&rarr;</div>
       <div class="pipeline-step">
-        <div class="step-icon">&#128200;</div>
+        <div class="step-icon" aria-hidden="true">&#128200;</div>
         <div class="step-title">Keep / Discard</div>
         <div class="step-desc">Accept if improved</div>
       </div>
@@ -773,7 +776,7 @@
   <div class="install-section">
     <h2>Get Started</h2>
     <p>Supports English and &#20013;&#25991;. Bilingual from init to PDF export.</p>
-    <div class="install-cmd" onclick="navigator.clipboard.writeText('npx immigration-optimizer')">
+    <div class="install-cmd" id="copyCmd">
       <span class="dollar">$</span>npx immigration-optimizer
     </div>
   </div>
@@ -790,7 +793,7 @@ const pages = document.querySelectorAll('.programs-page');
 const prevBtn = document.getElementById('prevPage');
 const nextBtn = document.getElementById('nextPage');
 const currentSpan = document.getElementById('currentPage');
-let current = 0;
+let carouselPage = 0;
 
 function showPage(i) {
   pages.forEach(p => p.classList.remove('active'));
@@ -798,11 +801,21 @@ function showPage(i) {
   currentSpan.textContent = i + 1;
   prevBtn.disabled = i === 0;
   nextBtn.disabled = i === pages.length - 1;
-  current = i;
+  carouselPage = i;
 }
 
-prevBtn.addEventListener('click', () => { if (current > 0) showPage(current - 1); });
-nextBtn.addEventListener('click', () => { if (current < pages.length - 1) showPage(current + 1); });
+prevBtn.addEventListener('click', () => { if (carouselPage > 0) showPage(carouselPage - 1); });
+nextBtn.addEventListener('click', () => { if (carouselPage < pages.length - 1) showPage(carouselPage + 1); });
+
+// Copy-to-clipboard for install CTA
+document.getElementById('copyCmd').addEventListener('click', () => {
+  navigator.clipboard.writeText('npx immigration-optimizer').then(() => {
+    const el = document.getElementById('copyCmd');
+    const orig = el.innerHTML;
+    el.innerHTML = '<span class="dollar">&#10003;</span>Copied!';
+    setTimeout(() => { el.innerHTML = orig; }, 1500);
+  });
+});
 
 // Smooth scroll for nav links
 document.querySelectorAll('nav .links a').forEach(a => {
@@ -817,13 +830,13 @@ document.querySelectorAll('nav .links a').forEach(a => {
 const sections = document.querySelectorAll('section[id]');
 const navLinks = document.querySelectorAll('nav .links a');
 window.addEventListener('scroll', () => {
-  let current = '';
+  let activeId = '';
   sections.forEach(s => {
-    if (window.scrollY >= s.offsetTop - 80) current = s.id;
+    if (window.scrollY >= s.offsetTop - 80) activeId = s.id;
   });
   navLinks.forEach(a => {
-    a.style.color = a.getAttribute('href') === '#' + current ? '#1a1a1a' : '';
-    a.style.fontWeight = a.getAttribute('href') === '#' + current ? '700' : '';
+    a.style.color = a.getAttribute('href') === '#' + activeId ? '#1a1a1a' : '';
+    a.style.fontWeight = a.getAttribute('href') === '#' + activeId ? '700' : '';
   });
 });
 </script>
