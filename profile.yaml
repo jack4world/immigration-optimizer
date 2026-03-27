@@ -1,0 +1,62 @@
+personal:
+  name: 张明
+  nationality: Chinese
+  age: 40
+  date_of_birth: '1986-05-15'
+  marital_status: married
+  has_children: true
+education:
+  highest_degree: bachelors
+  field_of_study: Mechanical Engineering
+  institution: 哈尔滨工业大学
+  country: China
+  year_completed: 2008
+  has_canadian_credential: false
+  eca_completed: true
+language:
+  primary_test: IELTS
+  english:
+    reading: 8
+    writing: 7
+    listening: 8
+    speaking: 7
+  french: null
+work_experience:
+  canadian: []
+  foreign: []
+  total_years_canadian: 0
+  total_years_foreign: 15
+  current_occupation: Mechanical Engineer
+  noc_code: '21301'
+  teer_category: 1
+finances:
+  settlement_funds_cad: 30000
+  proof_of_funds_available: true
+  willing_to_invest: false
+canadian_ties:
+  has_job_offer: false
+  has_lmia: false
+  relatives_in_canada: false
+  previous_study_in_canada: false
+  previous_work_in_canada: false
+  previous_visit_to_canada: false
+preferences:
+  target_provinces:
+    - Ontario
+    - British Columbia
+    - Alberta
+  preferred_city_size: any
+  industry_preference:
+    - Mechanical Engineering
+  timeline_urgency: within_1_year
+  risk_tolerance: medium
+  willing_to_study: false
+  willing_to_relocate_province: true
+  priority_order:
+    - certainty
+    - speed
+    - cost
+    - quality_of_life
+  anti_patterns:
+    - 不愿意读college换身份
+    - 不愿意做非本专业工作
