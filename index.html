@@ -40,54 +40,42 @@
       left: 0;
       right: 0;
       z-index: 100;
-      background: transparent;
+      background: var(--nav-bg);
       backdrop-filter: blur(10px);
-      border-bottom: 1px solid transparent;
+      border-bottom: 1px solid var(--border);
       padding: 0 2rem;
       height: 52px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      transition: background 0.3s, border-color 0.3s;
-    }
-    nav.scrolled {
-      background: var(--nav-bg);
-      border-bottom-color: var(--border);
     }
     nav .logo {
       font-weight: 700;
       font-size: 1rem;
       letter-spacing: -0.02em;
-      color: #fff;
-      transition: color 0.3s;
+      color: var(--text);
     }
-    nav.scrolled .logo { color: var(--text); }
-    nav .logo span { color: var(--accent-light); }
-    nav.scrolled .logo span { color: var(--accent); }
+    nav .logo span { color: var(--accent); }
     nav .links { display: flex; gap: 1.5rem; position: absolute; left: 50%; transform: translateX(-50%); }
     nav .links a {
       text-decoration: none;
-      color: rgba(255,255,255,0.6);
+      color: var(--text-secondary);
       font-size: 0.85rem;
       font-weight: 500;
       transition: color 0.2s;
     }
-    nav .links a:hover { color: #fff; }
-    nav.scrolled .links a { color: var(--text-secondary); }
-    nav.scrolled .links a:hover { color: var(--text); }
+    nav .links a:hover { color: var(--text); }
     nav .gh-link {
       font-size: 0.85rem;
-      color: rgba(255,255,255,0.6);
+      color: var(--text-secondary);
       text-decoration: none;
       font-weight: 500;
-      border: 1px solid rgba(255,255,255,0.2);
+      border: 1px solid var(--border);
       padding: 0.3rem 0.8rem;
       border-radius: 6px;
       transition: all 0.2s;
     }
-    nav .gh-link:hover { border-color: rgba(255,255,255,0.5); color: #fff; }
-    nav.scrolled .gh-link { color: var(--text-secondary); border-color: var(--border); }
-    nav.scrolled .gh-link:hover { border-color: var(--text-secondary); color: var(--text); }
+    nav .gh-link:hover { border-color: var(--text-secondary); color: var(--text); }
 
     /* --- Main container --- */
     main {
@@ -98,39 +86,28 @@
 
     /* --- Hero --- */
     .hero-wrapper {
-      background: linear-gradient(135deg, #1a1a1a 0%, #2d1a1a 40%, #3d1c1c 70%, #1a1a1a 100%);
-      padding: 120px 1.5rem 0;
-      position: relative;
-      overflow: hidden;
-    }
-    .hero-wrapper::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background:
-        radial-gradient(ellipse 600px 400px at 20% 50%, rgba(192,57,43,0.12) 0%, transparent 70%),
-        radial-gradient(ellipse 500px 300px at 80% 30%, rgba(192,57,43,0.08) 0%, transparent 70%);
-      pointer-events: none;
+      background: linear-gradient(160deg, #fff 0%, #fdf6f4 40%, #faf0ed 70%, #f5e6e1 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 52px 1.5rem 0;
     }
     .hero-wrapper .hero-inner {
       max-width: 860px;
       margin: 0 auto;
-      padding: 3rem 0 2.5rem;
-      position: relative;
+      padding: 3.5rem 0 2.5rem;
     }
     .hero-tag {
       display: inline-block;
       font-family: var(--font-mono);
       font-size: 0.75rem;
       font-weight: 600;
-      color: var(--accent-light);
+      color: var(--accent);
       letter-spacing: 0.08em;
       text-transform: uppercase;
       margin-bottom: 1.2rem;
       padding: 0.3rem 0.8rem;
-      border: 1px solid rgba(192,57,43,0.3);
+      border: 1px solid rgba(192,57,43,0.2);
       border-radius: 4px;
-      background: rgba(192,57,43,0.08);
+      background: rgba(192,57,43,0.06);
     }
     .hero h1 {
       font-family: var(--font-serif);
@@ -139,16 +116,16 @@
       letter-spacing: -0.03em;
       line-height: 1.15;
       margin-bottom: 1.2rem;
-      color: #fff;
+      color: var(--text);
     }
-    .hero h1 span { color: var(--accent-light); }
+    .hero h1 span { color: var(--accent); }
     .hero .subtitle {
       font-size: 1.15rem;
-      color: rgba(255,255,255,0.6);
+      color: var(--text-secondary);
       line-height: 1.7;
       max-width: 620px;
     }
-    .hero .subtitle strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+    .hero .subtitle strong { color: var(--text); font-weight: 600; }
 
     /* --- Metrics grid (inside hero) --- */
     .metrics {
@@ -159,24 +136,23 @@
       padding-bottom: 2.5rem;
     }
     .metric {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 10px;
       padding: 1.2rem 1rem;
       text-align: center;
-      backdrop-filter: blur(4px);
     }
     .metric .number {
       font-size: 2.2rem;
       font-weight: 800;
       letter-spacing: -0.04em;
-      color: #fff;
+      color: var(--text);
       line-height: 1;
     }
-    .metric .number.accent { color: var(--accent-light); }
+    .metric .number.accent { color: var(--accent); }
     .metric .label {
       font-size: 0.75rem;
-      color: rgba(255,255,255,0.45);
+      color: var(--text-secondary);
       margin-top: 0.4rem;
       text-transform: uppercase;
       letter-spacing: 0.06em;
@@ -465,7 +441,7 @@
       .pipeline-step { max-width: 100%; }
       .pipeline-arrow { transform: rotate(90deg); padding: 0.3rem 0; }
       .hero h1 { font-size: 2rem; }
-      .hero-wrapper { padding: 100px 1.5rem 0; }
+      .hero-wrapper { padding: 52px 1.5rem 0; }
       nav .links { display: none; }
     }
   </style>
@@ -883,25 +859,17 @@ document.querySelectorAll('nav .links a').forEach(a => {
   });
 });
 
-// Nav scroll state + active highlight
-const navEl = document.querySelector('nav');
-const heroWrapper = document.querySelector('.hero-wrapper');
+// Active nav highlight on scroll
 const sections = document.querySelectorAll('section[id]');
 const navLinks = document.querySelectorAll('nav .links a');
 window.addEventListener('scroll', () => {
-  // Toggle nav background when past hero
-  const heroBottom = heroWrapper ? heroWrapper.offsetHeight : 300;
-  navEl.classList.toggle('scrolled', window.scrollY > heroBottom - 60);
-
-  // Active section highlight
   let activeId = '';
   sections.forEach(s => {
     if (window.scrollY >= s.offsetTop - 80) activeId = s.id;
   });
-  const isScrolled = navEl.classList.contains('scrolled');
   navLinks.forEach(a => {
     const isActive = a.getAttribute('href') === '#' + activeId;
-    a.style.color = isActive ? (isScrolled ? '#1a1a1a' : '#fff') : '';
+    a.style.color = isActive ? '#1a1a1a' : '';
     a.style.fontWeight = isActive ? '700' : '';
   });
 });
