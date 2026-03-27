@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>immigration-optimizer — AI-Powered Canadian Immigration Pathway Optimizer</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --text: #1a1a1a;
+      --text-secondary: #555;
+      --accent: #c0392b;
+      --accent-light: #e74c3c;
+      --border: #e0e0e0;
+      --code-bg: #f4f4f4;
+      --metric-bg: #fff;
+      --nav-bg: rgba(250,250,250,0.95);
+      --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      --font-serif: Georgia, 'Times New Roman', serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    /* --- Navigation --- */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: var(--nav-bg);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    nav .logo {
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    nav .logo span { color: var(--accent); }
+    nav .links { display: flex; gap: 1.5rem; }
+    nav .links a {
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    nav .links a:hover { color: var(--text); }
+    nav .gh-link {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      padding: 0.3rem 0.8rem;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    nav .gh-link:hover { border-color: var(--text-secondary); color: var(--text); }
+
+    /* --- Main container --- */
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 80px 1.5rem 4rem;
+    }
+
+    /* --- Hero --- */
+    .hero {
+      padding: 3rem 0 2.5rem;
+    }
+    .hero h1 {
+      font-family: var(--font-serif);
+      font-size: 2.6rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero .subtitle {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 680px;
+    }
+
+    /* --- Metrics grid --- */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin: 2.5rem 0 3rem;
+    }
+    .metric {
+      background: var(--metric-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.2rem 1rem;
+      text-align: center;
+    }
+    .metric .number {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--text);
+      line-height: 1;
+    }
+    .metric .number.accent { color: var(--accent); }
+    .metric .label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    /* --- Sections --- */
+    section { margin-bottom: 3rem; }
+    section h2 {
+      font-family: var(--font-serif);
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border);
+      letter-spacing: -0.02em;
+    }
+    section h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 1.5rem 0 0.6rem;
+    }
+    section p {
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+
+    /* --- Pipeline diagram --- */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin: 2rem 0;
+      flex-wrap: wrap;
+    }
+    .pipeline-step {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      text-align: center;
+      min-width: 140px;
+      transition: border-color 0.2s;
+    }
+    .pipeline-step:hover { border-color: var(--accent); }
+    .pipeline-step .step-icon { font-size: 1.6rem; margin-bottom: 0.3rem; }
+    .pipeline-step .step-title {
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .pipeline-step .step-desc {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 0.2rem;
+    }
+    .pipeline-arrow {
+      font-size: 1.4rem;
+      color: var(--text-secondary);
+      padding: 0 0.5rem;
+    }
+
+    /* --- Scoring table --- */
+    .scoring-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    .scoring-table th,
+    .scoring-table td {
+      text-align: left;
+      padding: 0.6rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .scoring-table th {
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+    }
+    .scoring-table .weight {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .scoring-table .bar-cell { width: 120px; }
+    .scoring-table .bar {
+      height: 6px;
+      background: var(--accent);
+      border-radius: 3px;
+      opacity: 0.7;
+    }
+
+    /* --- Mutation cards (carousel) --- */
+    .mutations-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .mutation-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      cursor: default;
+    }
+    .mutation-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .mutation-card .mut-name {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+    }
+    .mutation-card .mut-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* --- Programs carousel --- */
+    .programs-carousel { position: relative; margin: 1.5rem 0; }
+    .programs-page { display: none; }
+    .programs-page.active { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+    .program-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+    }
+    .program-card .prog-category {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+    .program-card .prog-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 0.2rem;
+    }
+    .program-card .prog-detail {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+    .carousel-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .carousel-nav button {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.3rem 0.8rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    .carousel-nav button:hover:not(:disabled) { border-color: var(--text); color: var(--text); }
+    .carousel-nav button:disabled { opacity: 0.3; cursor: default; }
+    .carousel-nav .page-indicator {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    /* --- Code blocks --- */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.8;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    .code-block .comment { color: #888; }
+    .code-block .cmd { color: var(--text); }
+    .code-block .flag { color: var(--accent); }
+
+    /* --- Agent modes --- */
+    .modes-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .mode-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .mode-card .mode-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+    .mode-card .mode-badge.safe { background: #e8f5e9; color: #2e7d32; }
+    .mode-card .mode-badge.yolo { background: #fff3e0; color: #e65100; }
+    .mode-card .mode-badge.headless { background: #e3f2fd; color: #1565c0; }
+    .mode-card .mode-badge.standalone { background: #f3e5f5; color: #7b1fa2; }
+    .mode-card .mode-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* --- CTA / Install --- */
+    .install-section {
+      background: var(--text);
+      color: #fff;
+      border-radius: 12px;
+      padding: 2.5rem;
+      text-align: center;
+      margin: 3rem 0 2rem;
+    }
+    .install-section h2 {
+      color: #fff;
+      border: none;
+      font-family: var(--font-serif);
+      margin-bottom: 0.5rem;
+    }
+    .install-section p {
+      color: #aaa;
+      margin-bottom: 1.5rem;
+    }
+    .install-cmd {
+      display: inline-block;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 0.8rem 2rem;
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      color: #fff;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .install-cmd:hover { background: rgba(255,255,255,0.15); }
+    .install-cmd .dollar { color: var(--accent-light); margin-right: 0.5rem; }
+
+    /* --- Footer --- */
+    footer {
+      text-align: center;
+      padding: 2rem 0;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--text-secondary); }
+
+    /* --- Responsive --- */
+    @media (max-width: 700px) {
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .mutations-grid { grid-template-columns: 1fr; }
+      .programs-page.active { grid-template-columns: 1fr; }
+      .modes-grid { grid-template-columns: 1fr; }
+      .pipeline { flex-direction: column; }
+      .pipeline-arrow { transform: rotate(90deg); }
+      .hero h1 { font-size: 2rem; }
+      nav .links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">immigration<span>-optimizer</span></div>
+  <div class="links">
+    <a href="#pipeline">Pipeline</a>
+    <a href="#scoring">Scoring</a>
+    <a href="#mutations">Mutations</a>
+    <a href="#programs">Programs</a>
+    <a href="#agent">Agent</a>
+  </div>
+  <a class="gh-link" href="https://github.com/jack4world/immigration-optimizer" target="_blank">GitHub</a>
+</nav>
+
+<main>
+
+  <!-- Hero -->
+  <section class="hero">
+    <h1>immigration<span>-optimizer</span></h1>
+    <p class="subtitle">
+      An AI-powered CLI that autonomously optimizes Canadian immigration pathways using the autoresearch pattern.
+      Analyzes your profile, calculates CRS scores, checks eligibility across 19+ programs, and iteratively improves your pathway to Permanent Residency.
+    </p>
+  </section>
+
+  <!-- Metrics -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="number accent">19+</div>
+      <div class="label">Programs</div>
+    </div>
+    <div class="metric">
+      <div class="number">5</div>
+      <div class="label">Score Dimensions</div>
+    </div>
+    <div class="metric">
+      <div class="number">6</div>
+      <div class="label">Mutation Types</div>
+    </div>
+    <div class="metric">
+      <div class="number accent">50</div>
+      <div class="label">Max Iterations</div>
+    </div>
+  </div>
+
+  <!-- Pipeline -->
+  <section id="pipeline">
+    <h2>Pipeline</h2>
+    <p>The optimizer follows the <strong>autoresearch pattern</strong>: it autonomously researches programs, generates pathway mutations, scores results, and keeps only improvements. Bad mutations are discarded; good ones accumulate.</p>
+
+    <div class="pipeline">
+      <div class="pipeline-step">
+        <div class="step-icon">&#128203;</div>
+        <div class="step-title">Profile</div>
+        <div class="step-desc">Parse applicant YAML</div>
+      </div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step">
+        <div class="step-icon">&#128270;</div>
+        <div class="step-title">Research</div>
+        <div class="step-desc">Web search + seed DB</div>
+      </div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step">
+        <div class="step-icon">&#9879;</div>
+        <div class="step-title">Mutate</div>
+        <div class="step-desc">Generate pathway change</div>
+      </div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step">
+        <div class="step-icon">&#9989;</div>
+        <div class="step-title">Score</div>
+        <div class="step-desc">5-dim + critic eval</div>
+      </div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step">
+        <div class="step-icon">&#128200;</div>
+        <div class="step-title">Keep / Discard</div>
+        <div class="step-desc">Accept if improved</div>
+      </div>
+    </div>
+
+    <h3>CRS Calculator</h3>
+    <p>A built-in CRS (Comprehensive Ranking System) calculator computes your Express Entry score based on age, education, language (IELTS/CELPIP/TEF/TCF), work experience, and additional factors. It identifies the highest-ROI improvement strategies for your specific profile.</p>
+
+    <h3>Eligibility Checker</h3>
+    <p>Every program in the database is checked against your profile: language levels, education, work experience, NOC code, settlement funds, and special requirements. Programs are classified as <strong>eligible</strong>, <strong>close</strong> (within 1 CLB level), or <strong>ineligible</strong>.</p>
+  </section>
+
+  <!-- Scoring -->
+  <section id="scoring">
+    <h2>Scoring Pipeline</h2>
+    <p>Scoring uses a <strong>5-dimension + reward/penalty</strong> system. An adversarial critic applies penalties for concrete flaws and rewards for strengths.</p>
+
+    <table class="scoring-table">
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Weight</th>
+          <th class="bar-cell">Distribution</th>
+          <th>Evaluates</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Success probability</strong></td>
+          <td class="weight">0.30</td>
+          <td class="bar-cell"><div class="bar" style="width:100%"></div></td>
+          <td>CRS competitiveness, eligibility match, approval rates</td>
+        </tr>
+        <tr>
+          <td><strong>Timeline efficiency</strong></td>
+          <td class="weight">0.25</td>
+          <td class="bar-cell"><div class="bar" style="width:83%"></div></td>
+          <td>Total duration, critical path, parallelization</td>
+        </tr>
+        <tr>
+          <td><strong>Cost efficiency</strong></td>
+          <td class="weight">0.15</td>
+          <td class="bar-cell"><div class="bar" style="width:50%"></div></td>
+          <td>Total cost, cost-risk ratio</td>
+        </tr>
+        <tr>
+          <td><strong>Quality of life</strong></td>
+          <td class="weight">0.15</td>
+          <td class="bar-cell"><div class="bar" style="width:50%"></div></td>
+          <td>Destination match, career continuity</td>
+        </tr>
+        <tr>
+          <td><strong>Plan robustness</strong></td>
+          <td class="weight">0.15</td>
+          <td class="bar-cell"><div class="bar" style="width:50%"></div></td>
+          <td>Backup options, policy sensitivity</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Mutations -->
+  <section id="mutations">
+    <h2>Mutation Types</h2>
+    <p>Each optimization iteration proposes a targeted change, then evaluates whether the change improved the overall pathway.</p>
+
+    <div class="mutations-grid">
+      <div class="mutation-card">
+        <div class="mut-name">SWAP_PROGRAM</div>
+        <div class="mut-desc">Replace a program with a better-fit alternative from the database</div>
+      </div>
+      <div class="mutation-card">
+        <div class="mut-name">ADD_CREDENTIAL</div>
+        <div class="mut-desc">Add language test, ECA, or certification to boost CRS score</div>
+      </div>
+      <div class="mutation-card">
+        <div class="mut-name">REORDER_STEPS</div>
+        <div class="mut-desc">Fix dependencies, move steps earlier in the timeline</div>
+      </div>
+      <div class="mutation-card">
+        <div class="mut-name">ADD_PARALLEL</div>
+        <div class="mut-desc">Run independent steps concurrently to save time</div>
+      </div>
+      <div class="mutation-card">
+        <div class="mut-name">SWITCH_PROVINCE</div>
+        <div class="mut-desc">Try a different province's Provincial Nominee Program</div>
+      </div>
+      <div class="mutation-card">
+        <div class="mut-name">RESEARCH</div>
+        <div class="mut-desc">Search for new programs via web (triggered after 5+ discards)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Programs Carousel -->
+  <section id="programs">
+    <h2>Seed Programs (19+)</h2>
+    <p>The optimizer ships with a curated database of Canadian immigration programs including eligibility requirements, processing times, fees, success rates, and historical CRS cutoffs.</p>
+
+    <div class="programs-carousel">
+      <!-- Page 1 -->
+      <div class="programs-page active" data-page="0">
+        <div class="program-card">
+          <div class="prog-category">Express Entry</div>
+          <div class="prog-name">Federal Skilled Worker (FSW)</div>
+          <div class="prog-detail">Points-based, 67+ on grid, CRS competitive</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Express Entry</div>
+          <div class="prog-name">Canadian Experience Class (CEC)</div>
+          <div class="prog-detail">1+ year Canadian work experience, no grid</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Express Entry</div>
+          <div class="prog-name">Federal Skilled Trades (FST)</div>
+          <div class="prog-detail">Trade certification, CLB 5/4, 2yr experience</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Ontario</div>
+          <div class="prog-name">Human Capital Priorities (HCP)</div>
+          <div class="prog-detail">PNP +600 CRS, tech & STEM priority</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Ontario</div>
+          <div class="prog-name">French-Speaking Skilled Worker</div>
+          <div class="prog-detail">TEF/TCF CLB 7+, strong French bonus</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">British Columbia</div>
+          <div class="prog-name">BC PNP Tech</div>
+          <div class="prog-detail">29 tech occupations, weekly draws</div>
+        </div>
+      </div>
+
+      <!-- Page 2 -->
+      <div class="programs-page" data-page="1">
+        <div class="program-card">
+          <div class="prog-category">British Columbia</div>
+          <div class="prog-name">BC PNP Skilled Worker</div>
+          <div class="prog-detail">Job offer required, BCPNP scoring</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Alberta</div>
+          <div class="prog-name">Alberta Express Entry Stream</div>
+          <div class="prog-detail">Alberta connection, NOI-based</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Alberta</div>
+          <div class="prog-name">Alberta Opportunity Stream</div>
+          <div class="prog-detail">Working in Alberta, broad NOC</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Saskatchewan</div>
+          <div class="prog-name">SINP Express Entry</div>
+          <div class="prog-detail">In-demand occupation list, 60 pts grid</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Saskatchewan</div>
+          <div class="prog-name">SINP Occupation In-Demand</div>
+          <div class="prog-detail">Non-EE, specific occupation match</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Manitoba</div>
+          <div class="prog-name">Manitoba Skilled Worker</div>
+          <div class="prog-detail">Manitoba connection, LAA points</div>
+        </div>
+      </div>
+
+      <!-- Page 3 -->
+      <div class="programs-page" data-page="2">
+        <div class="program-card">
+          <div class="prog-category">Manitoba</div>
+          <div class="prog-name">Manitoba Express Entry</div>
+          <div class="prog-detail">EE pool + Manitoba nomination</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Quebec</div>
+          <div class="prog-name">Regular Skilled Worker (QSWP)</div>
+          <div class="prog-detail">Separate system, CSQ, French required</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Quebec</div>
+          <div class="prog-name">Quebec Experience (PEQ)</div>
+          <div class="prog-detail">Quebec study/work, French B2</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Quebec</div>
+          <div class="prog-name">Quebec Business Investor</div>
+          <div class="prog-detail">Net worth $2M+, management experience</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Federal</div>
+          <div class="prog-name">Atlantic Immigration Program</div>
+          <div class="prog-detail">Atlantic employer designation, CLB 4+</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Federal</div>
+          <div class="prog-name">Startup Visa</div>
+          <div class="prog-detail">Letter of support from designated org</div>
+        </div>
+      </div>
+
+      <!-- Page 4 -->
+      <div class="programs-page" data-page="3">
+        <div class="program-card">
+          <div class="prog-category">Federal</div>
+          <div class="prog-name">Rural & Northern Pilot</div>
+          <div class="prog-detail">Community recommendation, smaller cities</div>
+        </div>
+        <div class="program-card">
+          <div class="prog-category">Quebec</div>
+          <div class="prog-name">Quebec Self-Employed</div>
+          <div class="prog-detail">Self-employment in Quebec, French preferred</div>
+        </div>
+      </div>
+
+      <div class="carousel-nav">
+        <button id="prevPage" disabled>&larr;</button>
+        <span class="page-indicator"><span id="currentPage">1</span> / <span id="totalPages">4</span></span>
+        <button id="nextPage">&rarr;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Agent Mode -->
+  <section id="agent">
+    <h2>Agent Mode</h2>
+    <p>The optimizer runs as a <strong>Claude Code agent</strong> that autonomously reads your profile, researches programs via web search, and runs the optimization loop &mdash; committing each mutation to git so you can review the full history.</p>
+
+    <div class="modes-grid">
+      <div class="mode-card">
+        <div class="mode-badge safe">SAFE (default)</div>
+        <div class="mode-desc">Claude Code prompts for permission on each action. Full control and transparency.</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-badge yolo">YOLO</div>
+        <div class="mode-desc">Skips all permission prompts for unattended operation. Use with <code>--yolo</code> flag.</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-badge headless">HEADLESS</div>
+        <div class="mode-desc">Non-interactive mode suitable for background runs and CI/CD pipelines.</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-badge standalone">STANDALONE</div>
+        <div class="mode-desc">Direct API calls without Claude Code. Works with custom OpenAI-compatible models.</div>
+      </div>
+    </div>
+
+    <h3>Web Search Integration</h3>
+    <p>Configure a search API for real-time program verification. Supports <strong>Tavily</strong>, <strong>Serper</strong>, and <strong>Brave Search</strong> APIs.</p>
+
+    <div class="code-block">
+      <span class="cmd">immigration-optimizer config set search_api.provider tavily</span><br>
+      <span class="cmd">immigration-optimizer config set search_api.api_key</span> <span class="flag">&lt;key&gt;</span>
+    </div>
+  </section>
+
+  <!-- Quick Start -->
+  <section id="quickstart">
+    <h2>Quick Start</h2>
+    <div class="code-block">
+      <span class="comment"># Install globally</span><br>
+      <span class="cmd">npm install -g immigration-optimizer</span><br><br>
+      <span class="comment"># Initialize a new pathway project</span><br>
+      <span class="cmd">immigration-optimizer init</span> <span class="flag">"my-pathway"</span><br>
+      <span class="cmd">cd my-pathway</span><br><br>
+      <span class="comment"># Run the optimizer</span><br>
+      <span class="cmd">immigration-optimizer run</span>                <span class="comment"># agent mode (default)</span><br>
+      <span class="cmd">immigration-optimizer run</span> <span class="flag">--standalone</span>   <span class="comment"># direct API calls</span><br>
+      <span class="cmd">immigration-optimizer run</span> <span class="flag">--headless</span>     <span class="comment"># non-interactive</span><br>
+      <span class="cmd">immigration-optimizer run</span> <span class="flag">--headless --yolo --max-iterations 100</span><br><br>
+      <span class="comment"># Monitor & export</span><br>
+      <span class="cmd">immigration-optimizer dashboard</span> <span class="flag">--watch</span><br>
+      <span class="cmd">immigration-optimizer pdf</span>
+    </div>
+  </section>
+
+  <!-- Install CTA -->
+  <div class="install-section">
+    <h2>Get Started</h2>
+    <p>Supports English and &#20013;&#25991;. Bilingual from init to PDF export.</p>
+    <div class="install-cmd" onclick="navigator.clipboard.writeText('npx immigration-optimizer')">
+      <span class="dollar">$</span>npx immigration-optimizer
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <p>MIT License &middot; <a href="https://github.com/jack4world/immigration-optimizer">jack4world/immigration-optimizer</a></p>
+</footer>
+
+<script>
+// Carousel
+const pages = document.querySelectorAll('.programs-page');
+const prevBtn = document.getElementById('prevPage');
+const nextBtn = document.getElementById('nextPage');
+const currentSpan = document.getElementById('currentPage');
+let current = 0;
+
+function showPage(i) {
+  pages.forEach(p => p.classList.remove('active'));
+  pages[i].classList.add('active');
+  currentSpan.textContent = i + 1;
+  prevBtn.disabled = i === 0;
+  nextBtn.disabled = i === pages.length - 1;
+  current = i;
+}
+
+prevBtn.addEventListener('click', () => { if (current > 0) showPage(current - 1); });
+nextBtn.addEventListener('click', () => { if (current < pages.length - 1) showPage(current + 1); });
+
+// Smooth scroll for nav links
+document.querySelectorAll('nav .links a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+
+// Active nav highlight on scroll
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav .links a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 80) current = s.id;
+  });
+  navLinks.forEach(a => {
+    a.style.color = a.getAttribute('href') === '#' + current ? '#1a1a1a' : '';
+    a.style.fontWeight = a.getAttribute('href') === '#' + current ? '700' : '';
+  });
+});
+</script>
+
+</body>
+</html>
