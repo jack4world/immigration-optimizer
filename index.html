@@ -93,13 +93,12 @@
     main {
       max-width: 860px;
       margin: 0 auto;
-      padding: 80px 1.5rem 4rem;
+      padding: 3rem 1.5rem 4rem;
     }
 
     /* --- Hero --- */
     .hero-wrapper {
       background: linear-gradient(135deg, #1a1a1a 0%, #2d1a1a 40%, #3d1c1c 70%, #1a1a1a 100%);
-      margin: -80px -1.5rem 0;
       padding: 120px 1.5rem 0;
       position: relative;
       overflow: hidden;
@@ -466,7 +465,7 @@
       .pipeline-step { max-width: 100%; }
       .pipeline-arrow { transform: rotate(90deg); padding: 0.3rem 0; }
       .hero h1 { font-size: 2rem; }
-      .hero-wrapper { margin: -80px -1.5rem 0; padding: 100px 1.5rem 0; }
+      .hero-wrapper { padding: 100px 1.5rem 0; }
       nav .links { display: none; }
     }
   </style>
@@ -486,42 +485,40 @@
   <a class="gh-link" href="https://github.com/jack4world/immigration-optimizer" target="_blank" rel="noopener noreferrer">GitHub</a>
 </nav>
 
-<main>
+<div class="hero-wrapper">
+  <div class="hero-inner">
+    <section class="hero">
+      <div class="hero-tag">Autoresearch Pattern</div>
+      <h1>immigration<span>-optimizer</span></h1>
+      <p class="subtitle">
+        An AI-powered CLI that autonomously optimizes <strong>Canadian immigration pathways</strong>.
+        Analyzes your profile, calculates <strong>CRS scores</strong>, checks eligibility across <strong>19+ programs</strong>,
+        and iteratively improves your pathway to <strong>Permanent Residency</strong>.
+      </p>
+    </section>
 
-  <div class="hero-wrapper">
-    <div class="hero-inner">
-      <!-- Hero -->
-      <section class="hero">
-        <div class="hero-tag">Autoresearch Pattern</div>
-        <h1>immigration<span>-optimizer</span></h1>
-        <p class="subtitle">
-          An AI-powered CLI that autonomously optimizes <strong>Canadian immigration pathways</strong>.
-          Analyzes your profile, calculates <strong>CRS scores</strong>, checks eligibility across <strong>19+ programs</strong>,
-          and iteratively improves your pathway to <strong>Permanent Residency</strong>.
-        </p>
-      </section>
-
-      <!-- Metrics -->
-      <div class="metrics">
-        <div class="metric">
-          <div class="number accent">19+</div>
-          <div class="label">Programs</div>
-        </div>
-        <div class="metric">
-          <div class="number">5</div>
-          <div class="label">Score Dimensions</div>
-        </div>
-        <div class="metric">
-          <div class="number">6</div>
-          <div class="label">Mutation Types</div>
-        </div>
-        <div class="metric">
-          <div class="number accent">50</div>
-          <div class="label">Max Iterations</div>
-        </div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="number accent">19+</div>
+        <div class="label">Programs</div>
+      </div>
+      <div class="metric">
+        <div class="number">5</div>
+        <div class="label">Score Dimensions</div>
+      </div>
+      <div class="metric">
+        <div class="number">6</div>
+        <div class="label">Mutation Types</div>
+      </div>
+      <div class="metric">
+        <div class="number accent">50</div>
+        <div class="label">Max Iterations</div>
       </div>
     </div>
   </div>
+</div>
+
+<main>
 
   <!-- Pipeline -->
   <section id="pipeline">
