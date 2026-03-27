@@ -73,6 +73,14 @@ program
   .description('ASCII chart of score progression')
   .action(chartCommand);
 
+program
+  .command('pdf')
+  .description('Export pathway.md as a formatted PDF')
+  .action(async () => {
+    const { exportPdf } = await import('./commands/export-pdf.js');
+    await exportPdf();
+  });
+
 process.on('unhandledRejection', (err) => {
   const msg = err instanceof Error ? err.message : String(err);
   console.error(`\n  \x1b[31mError: ${msg}\x1b[0m`);

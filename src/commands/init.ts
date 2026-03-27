@@ -342,6 +342,11 @@ export async function initCommand(name: string): Promise<void> {
   const projectDir = path.resolve(dirName);
 
   if (fs.existsSync(projectDir)) {
+    const overwrite = await confirm({ message: `Directory "${dirName}" already exists. Overwrite?`, default: false });
+    if (!overwrite) {
+      console.log(chalk.yellow('\n  Aborted.\n'));
+      return;
+    }
     fs.rmSync(projectDir, { recursive: true, force: true });
   }
 

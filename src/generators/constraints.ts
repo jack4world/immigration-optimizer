@@ -117,5 +117,5 @@ export function generateProfileYaml(answers: InitAnswers): string {
 }
 
 export function parseProfileYaml(yamlContent: string): ApplicantProfile {
-  return yaml.load(yamlContent) as ApplicantProfile;
+  return yaml.load(yamlContent, { schema: yaml.JSON_SCHEMA }) as ApplicantProfile;
 }

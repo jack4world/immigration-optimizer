@@ -1,25 +1,37 @@
 import { execSync } from 'child_process';
-import type { ApplicantProfile, CRSBreakdown } from '../data/schemas.js';
+import type { ApplicantProfile } from '../data/schemas.js';
 import type { Config } from '../data/config.js';
 import { getLanguage } from '../i18n.js';
 import { calculateCRS } from '../crs/calculator.js';
 
+let _cliBinaryCache: boolean | null = null;
+let _browserSkillCache: boolean | null = null;
+
 function hasCliBinary(): boolean {
+  if (_cliBinaryCache !== null) return _cliBinaryCache;
   try {
     execSync('which immigration-optimizer', { stdio: 'ignore' });
-    return true;
+    _cliBinaryCache = true;
   } catch {
-    return false;
+    _cliBinaryCache = false;
   }
+  return _cliBinaryCache;
 }
 
 function hasBrowserSkill(): boolean {
+  if (_browserSkillCache !== null) return _browserSkillCache;
   try {
     const out = execSync('claude skill list 2>/dev/null || echo ""', { encoding: 'utf-8', timeout: 5000 });
-    return out.includes('agent-browser');
+    _browserSkillCache = out.includes('agent-browser');
   } catch {
-    return false;
+    _browserSkillCache = false;
   }
+  return _browserSkillCache;
+}
+
+function numberedList(items: Array<{ condition: boolean; text: (n: number) => string }>): string {
+  let n = 1;
+  return items.filter(i => i.condition).map(i => i.text(n++)).join('\n');
 }
 
 export function generateProgram(profile: ApplicantProfile, config: Config, maxIterations = 50): string {
@@ -95,11 +107,11 @@ ${sourceNum}. **LLM knowledge** ${hasSearchApi || hasBrowser ? '(fallback)' : '(
 ${crs.details.provincial_nomination > 0 ? `- 省提名: +600` : ''}
 
 ### CRS 提分策略（按投入产出比排序）
-${(() => { let n = 1; const items: string[] = [];
-if (engMin < 10) items.push(`${n++}. **重考语言** — 当前最低CLB ${engMin}，提升到CLB 10可增加约 ${(10 - engMin) * 4}-${(10 - engMin) * 8} 分`);
-if (!profile.language.french) items.push(`${n++}. **考法语TEF/TCF** — CLB 7+ 可加 25-50 分（双语加分）`);
-if (!profile.education.has_canadian_credential) items.push(`${n++}. **加拿大教育证书** — 短期课程可加 15-30 分`);
-return items.join('\n'); })()}
+${numberedList([
+  { condition: engMin < 10, text: (n) => `${n}. **重考语言** — 当前最低CLB ${engMin}，提升到CLB 10可增加约 ${(10 - engMin) * 4}-${(10 - engMin) * 8} 分` },
+  { condition: !profile.language.french, text: (n) => `${n}. **考法语TEF/TCF** — CLB 7+ 可加 25-50 分（双语加分）` },
+  { condition: !profile.education.has_canadian_credential, text: (n) => `${n}. **加拿大教育证书** — 短期课程可加 15-30 分` },
+])}
 ${needsPnp ? `\n### 关键提醒\nCRS ${crs.total} 分低于近期全类别抽签线（~500+），建议:\n- 优先考虑PNP路线（省提名 +600 分，确保被邀请）\n- 或通过定向抽签（STEM、法语、医疗等类别邀请分数更低）` : ''}`
     : `## CRS Analysis
 
@@ -112,10 +124,10 @@ Current CRS: **${crs.total}**
 - Additional: ${crs.additional_points}
 
 ### CRS Improvement Strategies (by ROI)
-${(() => { let n = 1; const items: string[] = [];
-if (engMin < 10) items.push(`${n++}. **Retake language test** — min CLB ${engMin}, CLB 10 adds ~${(10 - engMin) * 4}-${(10 - engMin) * 8} points`);
-if (!profile.language.french) items.push(`${n++}. **Take French TEF/TCF** — CLB 7+ adds 25-50 points (bilingual bonus)`);
-return items.join('\n'); })()}
+${numberedList([
+  { condition: engMin < 10, text: (n) => `${n}. **Retake language test** — min CLB ${engMin}, CLB 10 adds ~${(10 - engMin) * 4}-${(10 - engMin) * 8} points` },
+  { condition: !profile.language.french, text: (n) => `${n}. **Take French TEF/TCF** — CLB 7+ adds 25-50 points (bilingual bonus)` },
+])}
 ${needsPnp ? `\n### Key Warning\nCRS ${crs.total} is below recent general draws (~500+). Consider:\n- PNP route (+600 points, guarantees invitation)\n- Category-based draws (STEM, French, healthcare have lower cutoffs)` : ''}`;
 
   const scoringGuide = isZh
